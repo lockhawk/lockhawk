@@ -35,7 +35,13 @@ export {
   OfflineDbMissingError,
 } from './osv/offline-db.js';
 export type { OfflineMeta, UpdateResult } from './osv/offline-db.js';
-export { resolveCacheDir, offlineDbDir, offlineMetaPath } from './cache/paths.js';
+export {
+  resolveCacheDir,
+  offlineDbDir,
+  offlineMetaPath,
+  shardBucket,
+  SHARD_BUCKETS,
+} from './cache/paths.js';
 
 // Reporters (M4 / M6).
 export { toJson } from './report/json.js';
