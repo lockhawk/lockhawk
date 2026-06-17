@@ -34,12 +34,17 @@ export class OfflineSource implements VulnSource {
   async prepare(packages: PackageRef[]): Promise<ResolvedSource> {
     const meta = await readOfflineMeta(this.opts.cacheDir);
     if (!meta) throw new OfflineDbMissingError();
-    const map = await loadAdvisoriesForPackages(this.opts.cacheDir, packages.map((p) => p.name));
+    const map = await loadAdvisoriesForPackages(
+      this.opts.cacheDir,
+      packages.map((p) => p.name),
+    );
 
     const ageHours = (Date.now() - Date.parse(meta.lastUpdated)) / HOUR_MS;
     const stale = ageHours > (this.opts.staleAfterHours ?? 24);
     const warnings = stale
-      ? [`Offline database is ${Math.round(ageHours)}h old. Run \`npm-scanner db update\` for current results.`]
+      ? [
+          `Offline database is ${Math.round(ageHours)}h old. Run \`npm-scanner db update\` for current results.`,
+        ]
       : [];
 
     return {
@@ -81,7 +86,9 @@ export class OnlineSource implements VulnSource {
         database: {
           source: 'online',
           stale: true,
-          warnings: [`OSV.dev was unreachable (${reason}). Scan completed without online data — results may be incomplete.`],
+          warnings: [
+            `OSV.dev was unreachable (${reason}). Scan completed without online data — results may be incomplete.`,
+          ],
         },
       };
     }
@@ -112,7 +119,9 @@ export class AutoSource implements VulnSource {
     } catch (err) {
       if (meta) {
         const resolved = await new OfflineSource(this.opts).prepare(packages);
-        resolved.database.warnings.push('Used the stale offline database because OSV.dev was unreachable.');
+        resolved.database.warnings.push(
+          'Used the stale offline database because OSV.dev was unreachable.',
+        );
         return resolved;
       }
       if (this.opts.strictNetwork) throw err;
@@ -122,7 +131,9 @@ export class AutoSource implements VulnSource {
         database: {
           source: 'online',
           stale: true,
-          warnings: [`No offline database and OSV.dev was unreachable (${reason}). Run \`npm-scanner db update\`.`],
+          warnings: [
+            `No offline database and OSV.dev was unreachable (${reason}). Run \`npm-scanner db update\`.`,
+          ],
         },
       };
     }

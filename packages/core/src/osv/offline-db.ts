@@ -6,7 +6,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import yauzl from 'yauzl';
 import type { OsvVulnerability } from '../types.js';
-import { offlineDbDir, offlineMetaPath, shardPath } from '../cache/paths.js';
+import { offlineDbDir, offlineMetaPath, shardBucket } from '../cache/paths.js';
 
 const OSV_NPM_ZIP_URL = 'https://storage.googleapis.com/osv-vulnerabilities/npm/all.zip';
 
@@ -76,7 +76,10 @@ export async function updateOfflineDatabase(opts: {
   }
 
   const zipPath = join(tmpdir(), `npm-scanner-osv-${process.pid}.zip`);
-  await pipeline(Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]), createWriteStream(zipPath));
+  await pipeline(
+    Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]),
+    createWriteStream(zipPath),
+  );
 
   onProgress?.('Extracting advisories…');
   const records = await readZipRecords(zipPath);
@@ -99,21 +102,46 @@ export async function updateOfflineDatabase(opts: {
   return { status: 'updated', meta };
 }
 
-/** Load advisories for the given package names from the per-package shards. */
+type Bucket = Record<string, OsvVulnerability[]>;
+
+function bucketDir(cacheDir: string): string {
+  return join(offlineDbDir(cacheDir), 'by-name');
+}
+
+function bucketPath(cacheDir: string, bucket: number): string {
+  return join(bucketDir(cacheDir), `${bucket}.json`);
+}
+
+/**
+ * Load advisories for the given package names. Names are grouped by shard
+ * bucket so each bucket file is read at most once, and a scan only touches the
+ * buckets its dependencies fall into.
+ */
 export async function loadAdvisoriesForPackages(
   cacheDir: string,
   names: Iterable<string>,
 ): Promise<Map<string, OsvVulnerability[]>> {
   if (!(await readOfflineMeta(cacheDir))) throw new OfflineDbMissingError();
+
+  const namesByBucket = new Map<number, string[]>();
+  for (const name of new Set(names)) {
+    const bucket = shardBucket(name);
+    const list = namesByBucket.get(bucket);
+    if (list) list.push(name);
+    else namesByBucket.set(bucket, [name]);
+  }
+
   const result = new Map<string, OsvVulnerability[]>();
-  const unique = new Set(names);
   await Promise.all(
-    [...unique].map(async (name) => {
+    [...namesByBucket.entries()].map(async ([bucket, bucketNames]) => {
       try {
-        const records = JSON.parse(await readFile(shardPath(cacheDir, name), 'utf8')) as OsvVulnerability[];
-        if (records.length) result.set(name, records);
+        const data = JSON.parse(await readFile(bucketPath(cacheDir, bucket), 'utf8')) as Bucket;
+        for (const name of bucketNames) {
+          const records = data[name];
+          if (records?.length) result.set(name, records);
+        }
       } catch {
-        // No shard for this package → no known advisories.
+        // No bucket file → none of these packages have advisories.
       }
     }),
   );
@@ -139,18 +167,30 @@ function groupByPackage(records: OsvVulnerability[]): Map<string, OsvVulnerabili
   return byName;
 }
 
-async function writeShards(cacheDir: string, byName: Map<string, OsvVulnerability[]>): Promise<void> {
-  const byNameDir = join(offlineDbDir(cacheDir), 'by-name');
-  await rm(byNameDir, { recursive: true, force: true });
-  await mkdir(byNameDir, { recursive: true });
-  const entries = [...byName.entries()];
-  // Write in batches to bound open file handles.
-  const BATCH = 200;
+async function writeShards(
+  cacheDir: string,
+  byName: Map<string, OsvVulnerability[]>,
+): Promise<void> {
+  const dir = bucketDir(cacheDir);
+  await rm(dir, { recursive: true, force: true });
+  await mkdir(dir, { recursive: true });
+
+  // Group packages into a bounded number of bucket files (CI-cache friendly).
+  const buckets = new Map<number, Bucket>();
+  for (const [name, records] of byName) {
+    const bucket = shardBucket(name);
+    const map = buckets.get(bucket) ?? {};
+    map[name] = records;
+    buckets.set(bucket, map);
+  }
+
+  const entries = [...buckets.entries()];
+  const BATCH = 256;
   for (let i = 0; i < entries.length; i += BATCH) {
     await Promise.all(
-      entries.slice(i, i + BATCH).map(([name, records]) =>
-        writeFile(shardPath(cacheDir, name), JSON.stringify(records)),
-      ),
+      entries
+        .slice(i, i + BATCH)
+        .map(([bucket, map]) => writeFile(bucketPath(cacheDir, bucket), JSON.stringify(map))),
     );
   }
 }

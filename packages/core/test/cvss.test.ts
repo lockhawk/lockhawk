@@ -26,7 +26,9 @@ describe('scoreFromVector (CVSS v3.1)', () => {
   });
 
   it('returns null for a v4 vector (not natively scored)', () => {
-    expect(scoreFromVector('CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N')).toBeNull();
+    expect(
+      scoreFromVector('CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N'),
+    ).toBeNull();
   });
 });
 

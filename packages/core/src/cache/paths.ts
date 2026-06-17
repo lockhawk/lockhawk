@@ -18,9 +18,22 @@ export function offlineDbDir(cacheDir: string): string {
   return join(cacheDir, 'osv-db', 'npm');
 }
 
-/** Per-package advisory shard path (filename-safe encoding of the package name). */
+/** Number of advisory shard buckets — bounds the on-disk file count for CI caching. */
+export const SHARD_BUCKETS = 4096;
+
+/** FNV-1a hash → stable shard bucket for a package name. */
+export function shardBucket(packageName: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < packageName.length; i++) {
+    hash ^= packageName.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0) % SHARD_BUCKETS;
+}
+
+/** Path to the advisory shard file that holds a given package's advisories. */
 export function shardPath(cacheDir: string, packageName: string): string {
-  return join(offlineDbDir(cacheDir), 'by-name', `${encodeURIComponent(packageName)}.json`);
+  return join(offlineDbDir(cacheDir), 'by-name', `${shardBucket(packageName)}.json`);
 }
 
 /** Metadata file describing offline-DB freshness. */

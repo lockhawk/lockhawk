@@ -37,7 +37,10 @@ describe('isVersionAffected — event sweep', () => {
   });
 
   it('honors enumerated versions exactly', () => {
-    const affected: OsvAffected = { package: { ecosystem: 'npm', name: 'pkg' }, versions: ['1.2.3', '1.2.4'] };
+    const affected: OsvAffected = {
+      package: { ecosystem: 'npm', name: 'pkg' },
+      versions: ['1.2.3', '1.2.4'],
+    };
     expect(isVersionAffected('1.2.3', affected)).toBe(true);
     expect(isVersionAffected('1.2.5', affected)).toBe(false);
   });
@@ -90,9 +93,9 @@ describe('vulnerabilityAffects', () => {
   });
 
   it('never matches a withdrawn advisory', () => {
-    expect(vulnerabilityAffects('pkg', '1.2.0', { ...vuln, withdrawn: '2024-01-01T00:00:00Z' }).affected).toBe(
-      false,
-    );
+    expect(
+      vulnerabilityAffects('pkg', '1.2.0', { ...vuln, withdrawn: '2024-01-01T00:00:00Z' }).affected,
+    ).toBe(false);
   });
 });
 

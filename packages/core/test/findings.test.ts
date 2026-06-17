@@ -14,7 +14,9 @@ const advisory = (
   id: overrides.id,
   aliases: overrides.aliases,
   summary: overrides.summary ?? `${overrides.name} is vulnerable`,
-  severity: overrides.severity ?? [{ type: 'CVSS_V3', score: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' }],
+  severity: overrides.severity ?? [
+    { type: 'CVSS_V3', score: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' },
+  ],
   references: overrides.references,
   database_specific: overrides.database_specific,
   affected: [
@@ -24,7 +26,9 @@ const advisory = (
       ranges: [
         {
           type: 'SEMVER',
-          events: overrides.fixed ? [{ introduced: '0' }, { fixed: overrides.fixed }] : [{ introduced: '0' }],
+          events: overrides.fixed
+            ? [{ introduced: '0' }, { fixed: overrides.fixed }]
+            : [{ introduced: '0' }],
         },
       ],
     },
@@ -39,7 +43,10 @@ function db(...vulns: OsvVulnerability[]): (name: string) => OsvVulnerability[] 
 
 describe('buildFindings', () => {
   it('reports vulnerable packages with the dependency path and a fix recommendation', () => {
-    const findings = buildFindings(graph, db(advisory({ id: 'GHSA-b', name: 'pkg-b', fixed: '2.0.1' })));
+    const findings = buildFindings(
+      graph,
+      db(advisory({ id: 'GHSA-b', name: 'pkg-b', fixed: '2.0.1' })),
+    );
     expect(findings).toHaveLength(1);
     const f = findings[0]!;
     expect(f.packageName).toBe('pkg-b');
@@ -58,7 +65,10 @@ describe('buildFindings', () => {
   });
 
   it('drops dev dependencies when prodOnly is set', () => {
-    const all = db(advisory({ id: 'GHSA-d', name: 'pkg-d' }), advisory({ id: 'GHSA-b', name: 'pkg-b' }));
+    const all = db(
+      advisory({ id: 'GHSA-d', name: 'pkg-d' }),
+      advisory({ id: 'GHSA-b', name: 'pkg-b' }),
+    );
     expect(buildFindings(graph, all)).toHaveLength(2);
     expect(buildFindings(graph, all, { prodOnly: true })).toHaveLength(1);
   });

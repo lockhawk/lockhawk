@@ -66,7 +66,12 @@ export class OsvClient {
 
     for (let i = 0; i < packages.length; i += BATCH_SIZE) {
       const chunk = packages.slice(i, i + BATCH_SIZE);
-      const body = { queries: chunk.map((p) => ({ package: { name: p.name, ecosystem: 'npm' }, version: p.version })) };
+      const body = {
+        queries: chunk.map((p) => ({
+          package: { name: p.name, ecosystem: 'npm' },
+          version: p.version,
+        })),
+      };
       const data = await this.request<{ results: BatchResult[] }>(`${OSV_API}/querybatch`, body);
 
       for (let j = 0; j < chunk.length; j++) {
@@ -108,7 +113,9 @@ export class OsvClient {
   private async getVulnerability(id: string): Promise<OsvVulnerability | undefined> {
     const cached = await this.readCache(id);
     if (cached) return cached;
-    const record = await this.request<OsvVulnerability>(`${OSV_API}/vulns/${encodeURIComponent(id)}`);
+    const record = await this.request<OsvVulnerability>(
+      `${OSV_API}/vulns/${encodeURIComponent(id)}`,
+    );
     await this.writeCache(id, record);
     return record;
   }

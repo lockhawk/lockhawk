@@ -52,7 +52,9 @@ export async function scan(options: ScanOptions = {}, source?: VulnSource): Prom
     ignore: options.ignore && options.ignore.length ? new Set(options.ignore) : undefined,
   });
   if (options.severityThreshold && options.severityThreshold !== 'none') {
-    findings = findings.filter((f) => severityAtLeast(f.severity.level, options.severityThreshold!));
+    findings = findings.filter((f) =>
+      severityAtLeast(f.severity.level, options.severityThreshold!),
+    );
   }
   findings.sort(bySeverityThenName);
 
@@ -99,7 +101,8 @@ export function uniqueScannablePackages(graph: DependencyGraph, prodOnly?: boole
 function unscannablePackages(graph: DependencyGraph): UnscannablePackage[] {
   const out: UnscannablePackage[] = [];
   for (const node of Object.values(graph.nodes)) {
-    if (node.unscannable) out.push({ name: node.name, version: node.version, reason: node.unscannable.reason });
+    if (node.unscannable)
+      out.push({ name: node.name, version: node.version, reason: node.unscannable.reason });
   }
   return out;
 }
@@ -135,5 +138,7 @@ function bySeverityThenName(a: Finding, b: Finding): number {
 /** Lowest severity that should trigger a non-zero exit given a `--fail-on` threshold. */
 export function shouldFail(summary: ScanSummary, failOn: Severity): boolean {
   const levels: Severity[] = ['critical', 'high', 'medium', 'low', 'unknown'];
-  return levels.some((level) => SEVERITY_RANK[level] >= SEVERITY_RANK[failOn] && summary[level] > 0);
+  return levels.some(
+    (level) => SEVERITY_RANK[level] >= SEVERITY_RANK[failOn] && summary[level] > 0,
+  );
 }

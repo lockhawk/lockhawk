@@ -36,3 +36,9 @@ export {
 } from './osv/offline-db.js';
 export type { OfflineMeta, UpdateResult } from './osv/offline-db.js';
 export { resolveCacheDir, offlineDbDir, offlineMetaPath } from './cache/paths.js';
+
+// Reporters (M4 / M6).
+export { toJson } from './report/json.js';
+export { toSarif, toSarifString } from './report/sarif.js';
+export type { SarifLog } from './report/sarif.js';
+export { toHtml, DATA_MARKER } from './report/html.js';

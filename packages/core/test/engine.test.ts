@@ -8,7 +8,10 @@ import type { OsvVulnerability } from '../src/types.js';
 const projectDir = fileURLToPath(new URL('./fixtures/npm-v3', import.meta.url));
 
 /** A source backed by an in-memory DB — no network, fully deterministic. */
-function stubSource(vulns: OsvVulnerability[], database?: Partial<ResolvedSource['database']>): VulnSource {
+function stubSource(
+  vulns: OsvVulnerability[],
+  database?: Partial<ResolvedSource['database']>,
+): VulnSource {
   const db = new OsvDatabase();
   db.addAll(vulns);
   return {
@@ -26,7 +29,12 @@ const critical = (name: string, fixed?: string): OsvVulnerability => ({
   affected: [
     {
       package: { ecosystem: 'npm', name },
-      ranges: [{ type: 'SEMVER', events: fixed ? [{ introduced: '0' }, { fixed }] : [{ introduced: '0' }] }],
+      ranges: [
+        {
+          type: 'SEMVER',
+          events: fixed ? [{ introduced: '0' }, { fixed }] : [{ introduced: '0' }],
+        },
+      ],
     },
   ],
 });
@@ -54,7 +62,10 @@ describe('scan engine', () => {
   });
 
   it('respects prodOnly (drops dev dependency findings)', async () => {
-    const result = await scan({ path: projectDir, prodOnly: true }, stubSource([critical('pkg-d')]));
+    const result = await scan(
+      { path: projectDir, prodOnly: true },
+      stubSource([critical('pkg-d')]),
+    );
     expect(result.findings).toHaveLength(0);
   });
 
@@ -62,7 +73,12 @@ describe('scan engine', () => {
     const low: OsvVulnerability = {
       id: 'GHSA-low',
       database_specific: { severity: 'LOW' },
-      affected: [{ package: { ecosystem: 'npm', name: 'pkg-b' }, ranges: [{ type: 'SEMVER', events: [{ introduced: '0' }] }] }],
+      affected: [
+        {
+          package: { ecosystem: 'npm', name: 'pkg-b' },
+          ranges: [{ type: 'SEMVER', events: [{ introduced: '0' }] }],
+        },
+      ],
     };
     const result = await scan({ path: projectDir, severityThreshold: 'high' }, stubSource([low]));
     expect(result.findings).toHaveLength(0);
@@ -72,7 +88,12 @@ describe('scan engine', () => {
     const low: OsvVulnerability = {
       id: 'GHSA-low',
       database_specific: { severity: 'LOW' },
-      affected: [{ package: { ecosystem: 'npm', name: 'pkg-d' }, ranges: [{ type: 'SEMVER', events: [{ introduced: '0' }] }] }],
+      affected: [
+        {
+          package: { ecosystem: 'npm', name: 'pkg-d' },
+          ranges: [{ type: 'SEMVER', events: [{ introduced: '0' }] }],
+        },
+      ],
     };
     const result = await scan({ path: projectDir }, stubSource([critical('pkg-b'), low]));
     expect(result.findings[0]!.severity.level).toBe('critical');
@@ -80,7 +101,17 @@ describe('scan engine', () => {
 });
 
 describe('shouldFail (exit-code gating)', () => {
-  const summary = { total: 0, critical: 0, high: 0, medium: 0, low: 0, unknown: 0, none: 0, vulnerablePackages: 0, fixable: 0 };
+  const summary = {
+    total: 0,
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+    unknown: 0,
+    none: 0,
+    vulnerablePackages: 0,
+    fixable: 0,
+  };
 
   it('fails when a finding meets the threshold', () => {
     expect(shouldFail({ ...summary, high: 1 }, 'high')).toBe(true);

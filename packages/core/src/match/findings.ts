@@ -35,7 +35,9 @@ export function buildFindings(
     const candidates = candidatesFor(node.name);
     if (candidates.length === 0) continue;
 
-    const matched = candidates.filter((vuln) => vulnerabilityAffects(node.name, node.version, vuln).affected);
+    const matched = candidates.filter(
+      (vuln) => vulnerabilityAffects(node.name, node.version, vuln).affected,
+    );
     if (matched.length === 0) continue;
 
     const path = shortestPath(graph, node.key);
