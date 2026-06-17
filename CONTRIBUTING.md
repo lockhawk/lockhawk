@@ -47,9 +47,20 @@ pnpm --filter @lockhawk/report-ui dev   # dashboard dev server (uses sample data
 2. Make your change with a test. Tests live in each package's `test/` folder; lockfile and OSV
    fixtures go under `packages/core/test/fixtures/`.
 3. Keep it green: `pnpm build && pnpm test && pnpm typecheck && pnpm lint`.
-4. **Add a changeset** so your change is released: `pnpm changeset` (pick the bump level and write
-   a one-line summary). Skip this only for docs/test-only changes.
-5. Open a PR. Fill in the template; link any related issue.
+4. Open a PR. Fill in the template; link any related issue.
+
+## Releasing (maintainers)
+
+Releases are cut from a maintainer's machine with one command:
+
+```bash
+npm run pb              # interactive: pick patch / minor / major / prerelease
+npm run pb -- --dry-run # preview what would be published, without publishing
+```
+
+`@lockhawk/core` and `lockhawk` are version-locked, so `pb` bumps both to the same version, runs
+the tests and build, publishes them (core first), then commits and tags `vX.Y.Z`. Prereleases go
+to their own npm dist-tag (`beta`/`alpha`/`rc`) and never become the default `latest` install.
 
 ## Conventions
 

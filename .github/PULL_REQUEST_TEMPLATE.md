@@ -18,7 +18,6 @@ Closes #<!-- issue number, if any -->
 
 - [ ] `pnpm build && pnpm test && pnpm typecheck && pnpm lint` all pass
 - [ ] Added or updated tests for the change
-- [ ] Added a changeset (`pnpm changeset`) — _skip for docs/test-only changes_
 - [ ] Updated docs / README if behavior changed
 
 ## Notes for reviewers
