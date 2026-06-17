@@ -21,3 +21,18 @@ export type { FindingsOptions } from './match/findings.js';
 export { scoreFromVector, resolveSeverity, levelFromScore, levelFromLabel } from './score/cvss.js';
 export type { CvssResult } from './score/cvss.js';
 export { OsvDatabase } from './osv/database.js';
+
+// Sources, cache, and the scan engine (M3).
+export { scan, shouldFail, uniqueScannablePackages, TOOL } from './engine.js';
+export { createSource, OfflineSource, OnlineSource, AutoSource } from './osv/source.js';
+export type { VulnSource, ResolvedSource, SourceOptions } from './osv/source.js';
+export { OsvClient } from './osv/client.js';
+export type { PackageRef, OnlineClientOptions } from './osv/client.js';
+export {
+  updateOfflineDatabase,
+  readOfflineMeta,
+  loadAdvisoriesForPackages,
+  OfflineDbMissingError,
+} from './osv/offline-db.js';
+export type { OfflineMeta, UpdateResult } from './osv/offline-db.js';
+export { resolveCacheDir, offlineDbDir, offlineMetaPath } from './cache/paths.js';
