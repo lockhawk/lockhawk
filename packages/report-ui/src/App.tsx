@@ -405,11 +405,17 @@ function Detail({ finding, manager }: { finding: Finding | null; manager: string
           <div className="sec">
             <h3>References</h3>
             <div className="refs">
-              {finding.references.map((ref) => (
-                <a key={ref} href={ref} target="_blank" rel="noopener noreferrer">
-                  {ref}
-                </a>
-              ))}
+              {finding.references.map((ref) => {
+                const safe = safeHref(ref);
+                return safe ? (
+                  <a key={ref} href={safe} target="_blank" rel="noopener noreferrer">
+                    {ref}
+                  </a>
+                ) : (
+                  // Non-http(s) URLs are shown as inert text, never as a link.
+                  <span key={ref}>{ref}</span>
+                );
+              })}
             </div>
           </div>
         ) : null}
@@ -465,6 +471,16 @@ function recHtml(finding: Finding, _manager: string): string {
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]!);
+}
+
+/** Return the URL only if it is an http(s) link — guards against javascript:/data: hrefs. */
+function safeHref(url: string): string | undefined {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'http:' || u.protocol === 'https:' ? url : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function glow(sev: Severity): string {

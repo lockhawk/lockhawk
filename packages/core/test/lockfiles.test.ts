@@ -14,8 +14,11 @@ const fixture = (name: string): string =>
 const cases: { dir: string; manager: PackageManager }[] = [
   { dir: 'npm-v3', manager: 'npm' },
   { dir: 'npm-v1', manager: 'npm' },
+  { dir: 'npm-shrinkwrap', manager: 'npm' },
   { dir: 'yarn-classic', manager: 'yarn' },
+  { dir: 'yarn-berry', manager: 'yarn' },
   { dir: 'pnpm-v9', manager: 'pnpm' },
+  { dir: 'pnpm-v6', manager: 'pnpm' },
 ];
 
 describe.each(cases)('lockfile parsing: $dir', ({ dir, manager }) => {

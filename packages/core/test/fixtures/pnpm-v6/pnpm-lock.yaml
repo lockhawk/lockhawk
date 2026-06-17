@@ -1,0 +1,26 @@
+lockfileVersion: '6.0'
+
+dependencies:
+  pkg-a:
+    specifier: ^1.0.0
+    version: 1.0.0
+
+devDependencies:
+  pkg-d:
+    specifier: ^3.0.0
+    version: 3.0.0
+
+packages:
+  /pkg-a@1.0.0:
+    resolution: {integrity: sha512-aaa}
+    dependencies:
+      pkg-b: 2.0.0
+    dev: false
+
+  /pkg-b@2.0.0:
+    resolution: {integrity: sha512-bbb}
+    dev: false
+
+  /pkg-d@3.0.0:
+    resolution: {integrity: sha512-ccc}
+    dev: true

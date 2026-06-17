@@ -43,6 +43,16 @@ function esc(text: string): string {
   );
 }
 
+/** Only http(s) URLs are safe to render as links (blocks javascript:/data: hrefs). */
+function httpHref(url: string): string | undefined {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'http:' || u.protocol === 'https:' ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function fallbackTemplate(result: ScanResult, dataScript: string): string {
   const { summary } = result;
   const cards = (['critical', 'high', 'medium', 'low', 'unknown'] as Severity[])
@@ -59,6 +69,8 @@ function fallbackTemplate(result: ScanResult, dataScript: string): string {
       const path = f.dependencyPaths[0]?.join(' › ') ?? f.packageName;
       const refs = f.references
         .slice(0, 3)
+        .map((u) => httpHref(u))
+        .filter((u): u is string => u !== undefined)
         .map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener">link</a>`)
         .join(' ');
       return `

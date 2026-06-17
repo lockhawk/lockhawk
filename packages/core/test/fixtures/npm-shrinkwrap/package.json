@@ -1,0 +1,10 @@
+{
+  "name": "demo",
+  "version": "1.0.0",
+  "dependencies": {
+    "pkg-a": "^1.0.0"
+  },
+  "devDependencies": {
+    "pkg-d": "^3.0.0"
+  }
+}

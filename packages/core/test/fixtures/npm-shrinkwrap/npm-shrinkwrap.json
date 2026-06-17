@@ -1,0 +1,31 @@
+{
+  "name": "demo",
+  "version": "1.0.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "demo",
+      "version": "1.0.0",
+      "dependencies": {
+        "pkg-a": "^1.0.0"
+      },
+      "devDependencies": {
+        "pkg-d": "^3.0.0"
+      }
+    },
+    "node_modules/pkg-a": {
+      "version": "1.0.0",
+      "dependencies": {
+        "pkg-b": "^2.0.0"
+      }
+    },
+    "node_modules/pkg-b": {
+      "version": "2.0.0"
+    },
+    "node_modules/pkg-d": {
+      "version": "3.0.0",
+      "dev": true
+    }
+  }
+}
