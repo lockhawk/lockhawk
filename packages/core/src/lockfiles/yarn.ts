@@ -29,7 +29,14 @@ export function parseYarn(lockfilePath: string): RawGraph {
   const { descriptorToVersion, entryByVersion, lockfileVersion } = isBerry
     ? parseBerry(content)
     : parseClassic(content);
-  return assemble(lockfilePath, manifest, descriptorToVersion, entryByVersion, lockfileVersion, isBerry);
+  return assemble(
+    lockfilePath,
+    manifest,
+    descriptorToVersion,
+    entryByVersion,
+    lockfileVersion,
+    isBerry,
+  );
 }
 
 /** Split a "name@range" descriptor, scope-aware. */
@@ -96,7 +103,9 @@ function assemble(
   // Resolve a (name, range) request to an installed version, tolerating berry's
   // protocol prefixes (e.g. "npm:^1.0.0") that the manifest omits.
   const resolve = (name: string, range: string): string | undefined => {
-    const candidates = isBerry ? [`${name}@${range}`, `${name}@npm:${range}`] : [`${name}@${range}`];
+    const candidates = isBerry
+      ? [`${name}@${range}`, `${name}@npm:${range}`]
+      : [`${name}@${range}`];
     for (const c of candidates) {
       const v = descriptorToVersion.get(c);
       if (v) return v;

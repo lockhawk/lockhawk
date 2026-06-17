@@ -40,7 +40,12 @@ export function parsePnpm(lockfilePath: string): RawGraph {
     if (!parsed) continue;
     const nodeKey = pkgKey(parsed.name, parsed.version);
     if (!nodes[nodeKey]) {
-      nodes[nodeKey] = { key: nodeKey, name: parsed.name, version: parsed.version, dependencies: [] };
+      nodes[nodeKey] = {
+        key: nodeKey,
+        name: parsed.name,
+        version: parsed.version,
+        dependencies: [],
+      };
     }
   }
 
@@ -51,7 +56,12 @@ export function parsePnpm(lockfilePath: string): RawGraph {
     if (!parsed) continue;
     const fromKey = pkgKey(parsed.name, parsed.version);
     if (!nodes[fromKey]) {
-      nodes[fromKey] = { key: fromKey, name: parsed.name, version: parsed.version, dependencies: [] };
+      nodes[fromKey] = {
+        key: fromKey,
+        name: parsed.name,
+        version: parsed.version,
+        dependencies: [],
+      };
     }
     const addEdges = (deps?: Record<string, string>): void => {
       for (const [depName, depValue] of Object.entries(deps ?? {})) {
@@ -143,10 +153,15 @@ function stripVersion(value: string, major: number): string {
 function importerVersion(val: unknown, major: number): string | undefined {
   let ref: string | undefined;
   if (typeof val === 'string') ref = val;
-  else if (val && typeof val === 'object' && typeof (val as { version?: unknown }).version === 'string') {
+  else if (
+    val &&
+    typeof val === 'object' &&
+    typeof (val as { version?: unknown }).version === 'string'
+  ) {
     ref = (val as { version: string }).version;
   }
   if (!ref) return undefined;
-  if (ref.startsWith('link:') || ref.startsWith('file:') || ref.startsWith('workspace:')) return undefined;
+  if (ref.startsWith('link:') || ref.startsWith('file:') || ref.startsWith('workspace:'))
+    return undefined;
   return stripVersion(ref, major);
 }

@@ -4,7 +4,8 @@ import { loadDependencyGraph } from '../src/lockfiles/normalize.js';
 import { shortestPath } from '../src/graph/paths.js';
 import type { PackageManager } from '../src/types.js';
 
-const fixture = (name: string): string => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
+const fixture = (name: string): string =>
+  fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 
 // Every fixture encodes the same project so the normalized graph must match:
 //   demo@1.0.0
@@ -44,7 +45,11 @@ describe.each(cases)('lockfile parsing: $dir', ({ dir, manager }) => {
   });
 
   it('traces the dependency path to the transitive package', () => {
-    expect(shortestPath(graph, 'pkg-b@2.0.0')).toEqual(['demo@1.0.0', 'pkg-a@1.0.0', 'pkg-b@2.0.0']);
+    expect(shortestPath(graph, 'pkg-b@2.0.0')).toEqual([
+      'demo@1.0.0',
+      'pkg-a@1.0.0',
+      'pkg-b@2.0.0',
+    ]);
   });
 });
 

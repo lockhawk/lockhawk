@@ -49,7 +49,12 @@ function nameFromPath(p: string): string {
 
 /** Lockfile v2/v3: a flat `packages` map keyed by install path. */
 function parsePackages(
-  data: { name?: string; version?: string; lockfileVersion?: number; packages?: Record<string, PkgEntry> },
+  data: {
+    name?: string;
+    version?: string;
+    lockfileVersion?: number;
+    packages?: Record<string, PkgEntry>;
+  },
   lockfilePath: string,
 ): RawGraph {
   const packages = data.packages ?? {};
@@ -123,7 +128,10 @@ function parsePackages(
     };
 
     addEdges(Object.keys(entry.dependencies ?? {}), isLocalRoot ? directProd : undefined);
-    addEdges(Object.keys(entry.optionalDependencies ?? {}), isLocalRoot ? directOptional : undefined);
+    addEdges(
+      Object.keys(entry.optionalDependencies ?? {}),
+      isLocalRoot ? directOptional : undefined,
+    );
     if (isLocalRoot) {
       addEdges(Object.keys(entry.devDependencies ?? {}), directDev);
     }
@@ -144,7 +152,12 @@ function parsePackages(
 
 /** Lockfile v1: a nested `dependencies` tree. Direct deps come from package.json. */
 function parseLegacy(
-  data: { name?: string; version?: string; lockfileVersion?: number; dependencies?: Record<string, V1Entry> },
+  data: {
+    name?: string;
+    version?: string;
+    lockfileVersion?: number;
+    dependencies?: Record<string, V1Entry>;
+  },
   lockfilePath: string,
 ): RawGraph {
   const manifest = readRootManifest(dirname(lockfilePath));
@@ -169,7 +182,10 @@ function parseLegacy(
     return undefined;
   };
 
-  const visit = (deps: Record<string, V1Entry> | undefined, ancestors: Map<string, string>[]): void => {
+  const visit = (
+    deps: Record<string, V1Entry> | undefined,
+    ancestors: Map<string, string>[],
+  ): void => {
     const level = buildLevel(deps);
     const chain = [...ancestors, level];
     for (const [name, info] of Object.entries(deps ?? {})) {

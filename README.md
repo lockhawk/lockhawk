@@ -38,12 +38,12 @@ npx npm-scanner serve
 
 ## Packages
 
-| Package | Description |
-| --- | --- |
-| [`npm-scanner`](packages/cli) | The CLI (the `npm-scanner` binary). |
-| [`@npm-scanner/core`](packages/core) | The scanning engine (programmatic API). |
-| [`@npm-scanner/report-ui`](packages/report-ui) | The React dashboard / report UI. |
-| [`apps/action`](apps/action) | The GitHub Action wrapper. |
+| Package                                        | Description                             |
+| ---------------------------------------------- | --------------------------------------- |
+| [`npm-scanner`](packages/cli)                  | The CLI (the `npm-scanner` binary).     |
+| [`@npm-scanner/core`](packages/core)           | The scanning engine (programmatic API). |
+| [`@npm-scanner/report-ui`](packages/report-ui) | The React dashboard / report UI.        |
+| [`apps/action`](apps/action)                   | The GitHub Action wrapper.              |
 
 ## License
 
