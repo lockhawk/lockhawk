@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import type { ScanResult } from '@npm-scanner/core';
+import type { ScanResult } from '@lockhawk/core';
 import { renderResult } from '../report/render.js';
 import type { Format } from '../report/render.js';
 
@@ -16,7 +16,7 @@ export async function runReport(opts: ReportOptions): Promise<void> {
     result = JSON.parse(readFileSync(opts.input, 'utf8')) as ScanResult;
   } catch (err) {
     process.stderr.write(
-      `npm-scanner: could not read ${opts.input}: ${err instanceof Error ? err.message : err}\n`,
+      `lockhawk: could not read ${opts.input}: ${err instanceof Error ? err.message : err}\n`,
     );
     process.exitCode = 2;
     return;

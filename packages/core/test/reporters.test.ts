@@ -54,7 +54,7 @@ describe('SARIF reporter', () => {
     expect(run.tool.driver.rules[0]?.id).toBe('GHSA-b');
     expect(run.tool.driver.rules[0]?.properties?.['security-severity']).toBe('9.8');
     expect(run.results[0]?.level).toBe('error'); // critical → error
-    expect(run.results[0]?.partialFingerprints.npmScannerFinding).toBe('pkg-b@2.0.0@GHSA-b');
+    expect(run.results[0]?.partialFingerprints.lockhawkFinding).toBe('pkg-b@2.0.0@GHSA-b');
   });
 });
 

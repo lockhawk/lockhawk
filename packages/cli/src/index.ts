@@ -8,7 +8,7 @@ import { runServe } from './commands/serve.js';
 const program = new Command();
 
 program
-  .name('npm-scanner')
+  .name('lockhawk')
   .description(
     'Fast, free, accurate npm dependency vulnerability scanner (local + CI/CD), powered by OSV.dev',
   )
@@ -41,7 +41,7 @@ program
   .option('--strict-network', 'fail the scan on network errors instead of degrading gracefully')
   .option('--prod-only', 'ignore dev dependencies')
   .option('--ignore <ids...>', 'advisory ids to suppress')
-  .option('--ignore-file <path>', 'path to a .npmscanignore file')
+  .option('--ignore-file <path>', 'path to a .lockhawkignore file')
   .option('--cache-dir <dir>', 'override the cache directory')
   .option('--cache-ttl <hours>', 'cache freshness window in hours', (v) => Number(v))
   .option('--no-cache', 'bypass the on-disk cache')
@@ -87,6 +87,6 @@ program
   .action((path: string, opts) => runServe(path, opts));
 
 program.parseAsync().catch((err) => {
-  process.stderr.write(`npm-scanner: ${err instanceof Error ? err.message : String(err)}\n`);
+  process.stderr.write(`lockhawk: ${err instanceof Error ? err.message : String(err)}\n`);
   process.exitCode = 3;
 });

@@ -1,5 +1,5 @@
 {
-  "name": "npm-scanner-monorepo",
+  "name": "lockhawk-monorepo",
   "version": "0.0.0",
   "private": true,
   "type": "module",

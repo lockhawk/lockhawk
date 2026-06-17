@@ -23,7 +23,7 @@ export interface SarifLog {
   runs: unknown[];
 }
 
-const INFO_URI = 'https://github.com/npm-scanner/npm-scanner';
+const INFO_URI = 'https://github.com/lockhawk/lockhawk';
 
 /** GitHub renders findings by `security-severity` (a CVSS-like number 0–10). */
 function securitySeverity(finding: Finding): number {
@@ -91,7 +91,7 @@ export function toSarif(result: ScanResult): SarifLog {
         },
       ],
       partialFingerprints: {
-        npmScannerFinding: `${finding.packageName}@${finding.version}@${finding.id}`,
+        lockhawkFinding: `${finding.packageName}@${finding.version}@${finding.id}`,
       },
       properties: {
         package: finding.packageName,

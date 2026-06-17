@@ -37,14 +37,14 @@ export function toJunit(result: ScanResult): string {
 
   const cases =
     findings.length === 0
-      ? ['    <testcase name="No known vulnerabilities" classname="npm-scanner" time="0" />']
+      ? ['    <testcase name="No known vulnerabilities" classname="lockhawk" time="0" />']
       : findings.map((f) => {
           const name = `${f.packageName}@${f.version}: ${f.id} (${f.severity.level})`;
           const message = `${f.severity.level.toUpperCase()}${
             f.severity.score !== undefined ? ` ${f.severity.score}` : ''
           } ${f.id}: ${f.summary}`;
           return [
-            `    <testcase name="${xml(name)}" classname="npm-scanner.${xml(f.severity.level)}" time="0">`,
+            `    <testcase name="${xml(name)}" classname="lockhawk.${xml(f.severity.level)}" time="0">`,
             `      <failure message="${xml(message)}" type="${xml(f.severity.level)}">${xml(failureBody(f))}</failure>`,
             `    </testcase>`,
           ].join('\n');
@@ -52,7 +52,7 @@ export function toJunit(result: ScanResult): string {
 
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    `<testsuites name="npm-scanner" tests="${tests}" failures="${failures}" errors="0" time="${time}">`,
+    `<testsuites name="lockhawk" tests="${tests}" failures="${failures}" errors="0" time="${time}">`,
     `  <testsuite name="${xml(suiteName)}" tests="${tests}" failures="${failures}" errors="0" time="${time}">`,
     ...cases,
     '  </testsuite>',

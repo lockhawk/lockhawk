@@ -2,8 +2,8 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import open from 'open';
-import { scan, toHtml, toJson } from '@npm-scanner/core';
-import type { ScanResult, SourceMode } from '@npm-scanner/core';
+import { scan, toHtml, toJson } from '@lockhawk/core';
+import type { ScanResult, SourceMode } from '@lockhawk/core';
 import { loadReportShell } from '../report/shell.js';
 
 interface ServeOptions {
@@ -42,7 +42,7 @@ export async function runServe(pathArg: string, opts: ServeOptions): Promise<voi
   server.listen(port, () => {
     const url = `http://localhost:${port}`;
     process.stderr.write(
-      `\nnpm-scanner dashboard running at ${url}\n${summaryLine(result)}\nPress Ctrl+C to stop.\n`,
+      `\nlockhawk dashboard running at ${url}\n${summaryLine(result)}\nPress Ctrl+C to stop.\n`,
     );
     if (opts.open !== false) void open(url).catch(() => undefined);
   });

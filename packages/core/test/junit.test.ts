@@ -38,7 +38,7 @@ describe('JUnit reporter', () => {
     expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
     expect(xml).toContain('failures="1"');
     expect(xml).toContain('tests="1"');
-    expect(xml).toContain('classname="npm-scanner.critical"');
+    expect(xml).toContain('classname="lockhawk.critical"');
     expect(xml).toContain('<failure');
     expect(xml).toContain('Fixed in: 2.0.1');
     // `>` in the path is XML-escaped within the failure body.

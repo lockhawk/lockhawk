@@ -43,7 +43,7 @@ export class OfflineSource implements VulnSource {
     const stale = ageHours > (this.opts.staleAfterHours ?? 24);
     const warnings = stale
       ? [
-          `Offline database is ${Math.round(ageHours)}h old. Run \`npm-scanner db update\` for current results.`,
+          `Offline database is ${Math.round(ageHours)}h old. Run \`lockhawk db update\` for current results.`,
         ]
       : [];
 
@@ -132,7 +132,7 @@ export class AutoSource implements VulnSource {
           source: 'online',
           stale: true,
           warnings: [
-            `No offline database and OSV.dev was unreachable (${reason}). Run \`npm-scanner db update\`.`,
+            `No offline database and OSV.dev was unreachable (${reason}). Run \`lockhawk db update\`.`,
           ],
         },
       };

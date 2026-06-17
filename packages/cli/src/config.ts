@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { cosmiconfigSync } from 'cosmiconfig';
-import type { Severity, SourceMode } from '@npm-scanner/core';
+import type { Severity, SourceMode } from '@lockhawk/core';
 
-/** Configuration resolvable from a config file (`.npmscannerrc`, `package.json#npm-scanner`, …). */
+/** Configuration resolvable from a config file (`.lockhawkrc`, `package.json#lockhawk`, …). */
 export interface FileConfig {
   mode?: SourceMode;
   failOn?: Severity;
@@ -16,7 +16,7 @@ export interface FileConfig {
 /** Load a config file by searching upward from `cwd`. Returns `{}` if none found. */
 export function loadFileConfig(cwd: string): FileConfig {
   try {
-    const result = cosmiconfigSync('npm-scanner').search(cwd);
+    const result = cosmiconfigSync('lockhawk').search(cwd);
     return (result?.config as FileConfig) ?? {};
   } catch {
     return {};
@@ -24,7 +24,7 @@ export function loadFileConfig(cwd: string): FileConfig {
 }
 
 /**
- * Parse a `.npmscanignore` file. Each non-comment line is an advisory id with an
+ * Parse a `.lockhawkignore` file. Each non-comment line is an advisory id with an
  * optional expiry date (`GHSA-xxxx 2026-12-31`); expired entries are dropped so
  * suppressions don't silently outlive their review.
  */

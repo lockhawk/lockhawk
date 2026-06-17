@@ -4,13 +4,13 @@ import envPaths from 'env-paths';
 /**
  * Resolve the on-disk cache directory, honoring (in priority order):
  *   1. an explicit override (the `--cache-dir` flag)
- *   2. the `NPM_SCANNER_CACHE` environment variable
+ *   2. the `LOCKHAWK_CACHE` environment variable
  *   3. the OS-conventional cache location (via env-paths)
  */
 export function resolveCacheDir(override?: string): string {
   if (override) return override;
-  if (process.env.NPM_SCANNER_CACHE) return process.env.NPM_SCANNER_CACHE;
-  return envPaths('npm-scanner', { suffix: '' }).cache;
+  if (process.env.LOCKHAWK_CACHE) return process.env.LOCKHAWK_CACHE;
+  return envPaths('lockhawk', { suffix: '' }).cache;
 }
 
 /** Directory holding the offline OSV database for the npm ecosystem. */

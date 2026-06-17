@@ -2,10 +2,10 @@
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [["@npm-scanner/core", "npm-scanner"]],
+  "fixed": [["@lockhawk/core", "lockhawk"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@npm-scanner/report-ui", "npm-scanner-action"]
+  "ignore": ["@lockhawk/report-ui", "lockhawk-action"]
 }

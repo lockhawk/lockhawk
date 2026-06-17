@@ -1,6 +1,6 @@
-# Using npm-scanner in CI/CD
+# Using lockhawk in CI/CD
 
-`npm-scanner` is built to run in any pipeline without slowing it down: warm a
+`lockhawk` is built to run in any pipeline without slowing it down: warm a
 cached OSV database once, then every scan runs offline in well under a second.
 It is **fail-open** — a transient network problem never breaks your build — and
 its [exit codes](#exit-codes) give you precise control over gating.
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: npm-scanner/npm-scanner@v1
+      - uses: lockhawk/lockhawk@v1
         with:
           fail-on: high
 ```
@@ -28,11 +28,11 @@ Or wire it up by hand for full control:
 ```yaml
 - uses: actions/cache@v4
   with:
-    path: ~/.cache/npm-scanner
-    key: npm-scanner-osv-${{ runner.os }}-${{ github.run_id }}
-    restore-keys: npm-scanner-osv-${{ runner.os }}-
-- run: npx npm-scanner db update
-- run: npx npm-scanner scan --offline --format sarif --output scan.sarif --fail-on high
+    path: ~/.cache/lockhawk
+    key: lockhawk-osv-${{ runner.os }}-${{ github.run_id }}
+    restore-keys: lockhawk-osv-${{ runner.os }}-
+- run: npx lockhawk db update
+- run: npx lockhawk scan --offline --format sarif --output scan.sarif --fail-on high
 - if: always()
   uses: github/codeql-action/upload-sarif@v3
   with:
@@ -50,16 +50,16 @@ as an artifact for the full interactive dashboard.
 ```yaml
 - task: Cache@2
   inputs:
-    key: 'npm-scanner-osv | "$(Agent.OS)" | "$(Build.StartTime)"'
-    path: '$(HOME)/.cache/npm-scanner'
-- script: npx npm-scanner db update
+    key: 'lockhawk-osv | "$(Agent.OS)" | "$(Build.StartTime)"'
+    path: '$(HOME)/.cache/lockhawk'
+- script: npx lockhawk db update
   displayName: 'Warm OSV database'
 
 # Build report (do not fail the step here — let the Tests tab show results first)
 - script: >
-    npx npm-scanner scan
+    npx lockhawk scan
     --offline --format junit
-    --output "$(Build.ArtifactStagingDir)/npm-scanner.junit.xml"
+    --output "$(Build.ArtifactStagingDir)/lockhawk.junit.xml"
     --fail-on none
   displayName: 'Scan dependencies (JUnit)'
 
@@ -68,21 +68,21 @@ as an artifact for the full interactive dashboard.
   condition: always()
   inputs:
     testResultsFormat: 'JUnit'
-    testResultsFiles: '$(Build.ArtifactStagingDir)/npm-scanner.junit.xml'
+    testResultsFiles: '$(Build.ArtifactStagingDir)/lockhawk.junit.xml'
     testRunTitle: 'Dependency vulnerabilities'
     failTaskOnFailedTests: true # fail the pipeline when there are findings
 
 # Full interactive dashboard, downloadable from the build's Artifacts
 - script: >
-    npx npm-scanner scan . --offline --format html
-    --output "$(Build.ArtifactStagingDir)/npm-scanner-report.html"
+    npx lockhawk scan . --offline --format html
+    --output "$(Build.ArtifactStagingDir)/lockhawk-report.html"
     --fail-on none
   displayName: 'Generate HTML report'
   condition: always()
 - task: PublishBuildArtifacts@1
   condition: always()
   inputs:
-    pathToPublish: '$(Build.ArtifactStagingDir)/npm-scanner-report.html'
+    pathToPublish: '$(Build.ArtifactStagingDir)/lockhawk-report.html'
     artifactName: 'security-report'
 ```
 
@@ -101,16 +101,16 @@ the **SARIF SAST Scans Tab** marketplace extension instead.
 dependency_scan:
   image: node:22
   cache:
-    key: npm-scanner-osv
-    paths: ['.npm-scanner-cache/']
+    key: lockhawk-osv
+    paths: ['.lockhawk-cache/']
   variables:
-    NPM_SCANNER_CACHE: '.npm-scanner-cache'
+    LOCKHAWK_CACHE: '.lockhawk-cache'
   script:
-    - npx npm-scanner db update
+    - npx lockhawk db update
     # JUnit for the pipeline/MR test widget…
-    - npx npm-scanner scan --offline --format junit --output scan.junit.xml --fail-on none
+    - npx lockhawk scan --offline --format junit --output scan.junit.xml --fail-on none
     # …and the full HTML dashboard as a browsable artifact.
-    - npx npm-scanner scan --offline --format html --output scan-report.html --fail-on high
+    - npx lockhawk scan --offline --format html --output scan-report.html --fail-on high
   artifacts:
     when: always
     paths: ['scan-report.html']

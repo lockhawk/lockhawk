@@ -1,22 +1,21 @@
 {
-  "name": "npm-scanner",
+  "name": "lockhawk",
   "version": "0.1.0",
   "description": "Fast, free, accurate npm dependency vulnerability scanner for local + CI/CD, powered by OSV.dev",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/npm-scanner/npm-scanner.git",
+    "url": "git+https://github.com/lockhawk/lockhawk.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/npm-scanner/npm-scanner#readme",
-  "bugs": "https://github.com/npm-scanner/npm-scanner/issues",
+  "homepage": "https://github.com/lockhawk/lockhawk#readme",
+  "bugs": "https://github.com/lockhawk/lockhawk/issues",
   "publishConfig": {
     "access": "public"
   },
   "bin": {
-    "npm-scanner": "./dist/index.js",
-    "npmscan": "./dist/index.js"
+    "lockhawk": "./dist/index.js"
   },
   "files": [
     "dist"
@@ -58,7 +57,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@npm-scanner/core": "workspace:*",
+    "@lockhawk/core": "workspace:*",
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.5",
     "commander": "^12.1.0",
@@ -67,7 +66,7 @@
     "ora": "^8.1.1"
   },
   "devDependencies": {
-    "@npm-scanner/report-ui": "workspace:*",
+    "@lockhawk/report-ui": "workspace:*",
     "@types/node": "^22.10.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
-import type { Finding, ScanResult, Severity } from '@npm-scanner/core';
+import type { Finding, ScanResult, Severity } from '@lockhawk/core';
 import { decodeCvss } from './cvss.js';
 
 /** Build a style object that includes CSS custom properties (`--x`). */
@@ -92,7 +92,7 @@ function Masthead({ result }: { result: ScanResult }): JSX.Element {
         </span>
         <div>
           <div className="wordmark">
-            npm<b>·</b>scanner
+            lock<b>hawk</b>
           </div>
           <div className="tagline">dependency vulnerability report</div>
         </div>
@@ -453,7 +453,7 @@ function Clean(): JSX.Element {
 function Footer({ result }: { result: ScanResult }): JSX.Element {
   return (
     <footer className="foot">
-      <span>npm-scanner v{result.tool.version}</span>
+      <span>lockhawk v{result.tool.version}</span>
       <span>data: OSV.dev</span>
       <span>scanned {new Date(result.scannedAt).toLocaleString()}</span>
       {result.stats.durationMs !== undefined ? <span>{result.stats.durationMs}ms</span> : null}

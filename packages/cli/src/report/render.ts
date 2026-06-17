@@ -1,5 +1,5 @@
-import { toHtml, toJson, toJunit, toSarifString } from '@npm-scanner/core';
-import type { ScanResult } from '@npm-scanner/core';
+import { toHtml, toJson, toJunit, toSarifString } from '@lockhawk/core';
+import type { ScanResult } from '@lockhawk/core';
 import { renderTable } from './table.js';
 import { loadReportShell } from './shell.js';
 

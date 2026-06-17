@@ -1,6 +1,6 @@
-name: 'npm-scanner'
+name: 'lockhawk'
 description: 'Fast, free npm dependency vulnerability scan (OSV.dev) with SARIF upload to the Security tab'
-author: 'npm-scanner'
+author: 'lockhawk'
 branding:
   icon: 'shield'
   color: 'green'
@@ -25,7 +25,7 @@ inputs:
     description: 'Ignore dev dependencies'
     default: 'false'
   version:
-    description: 'npm-scanner version to run via npx'
+    description: 'lockhawk version to run via npx'
     default: 'latest'
 
 outputs:
@@ -47,23 +47,23 @@ runs:
       if: ${{ inputs.offline == 'true' }}
       uses: actions/cache@v4
       with:
-        path: ~/.cache/npm-scanner
-        key: npm-scanner-osv-${{ runner.os }}-${{ steps.meta.outputs.date }}
+        path: ~/.cache/lockhawk
+        key: lockhawk-osv-${{ runner.os }}-${{ steps.meta.outputs.date }}
         restore-keys: |
-          npm-scanner-osv-${{ runner.os }}-
+          lockhawk-osv-${{ runner.os }}-
 
     - name: Warm offline database
       if: ${{ inputs.offline == 'true' }}
       shell: bash
-      run: npx -y npm-scanner@${{ inputs.version }} db update
+      run: npx -y lockhawk@${{ inputs.version }} db update
 
     - name: Scan
       id: scan
       shell: bash
       run: |
         set +e
-        SARIF="$RUNNER_TEMP/npm-scanner.sarif"
-        npx -y npm-scanner@${{ inputs.version }} scan "${{ inputs.path }}" \
+        SARIF="$RUNNER_TEMP/lockhawk.sarif"
+        npx -y lockhawk@${{ inputs.version }} scan "${{ inputs.path }}" \
           --format sarif --output "$SARIF" \
           --severity-threshold "${{ inputs.severity-threshold }}" \
           --fail-on "${{ inputs.fail-on }}" \
@@ -79,11 +79,11 @@ runs:
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ${{ steps.scan.outputs.sarif-file }}
-        category: npm-scanner
+        category: lockhawk
 
     - name: Fail the build on findings
       if: ${{ steps.scan.outputs.exit-code != '0' }}
       shell: bash
       run: |
-        echo "::error title=npm-scanner::Found dependency vulnerabilities at or above '${{ inputs.fail-on }}' severity."
+        echo "::error title=lockhawk::Found dependency vulnerabilities at or above '${{ inputs.fail-on }}' severity."
         exit 1

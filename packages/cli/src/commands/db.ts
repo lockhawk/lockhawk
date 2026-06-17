@@ -4,7 +4,7 @@ import {
   readOfflineMeta,
   resolveCacheDir,
   updateOfflineDatabase,
-} from '@npm-scanner/core';
+} from '@lockhawk/core';
 
 interface DbOptions {
   cacheDir?: string;
@@ -44,7 +44,7 @@ export async function runDbStatus(opts: DbOptions): Promise<void> {
   const cacheDir = resolveCacheDir(opts.cacheDir);
   const meta = await readOfflineMeta(cacheDir);
   if (!meta) {
-    process.stdout.write('No offline database found. Run `npm-scanner db update` to create one.\n');
+    process.stdout.write('No offline database found. Run `lockhawk db update` to create one.\n');
     return;
   }
   const ageHours = Math.round((Date.now() - Date.parse(meta.lastUpdated)) / 3_600_000);

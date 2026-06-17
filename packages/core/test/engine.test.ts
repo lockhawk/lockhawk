@@ -43,7 +43,7 @@ describe('scan engine', () => {
   it('assembles a complete ScanResult', async () => {
     const result = await scan({ path: projectDir }, stubSource([critical('pkg-b', '2.0.1')]));
 
-    expect(result.tool.name).toBe('npm-scanner');
+    expect(result.tool.name).toBe('lockhawk');
     expect(result.target.manager).toBe('npm');
     expect(result.target.root.name).toBe('demo');
     expect(result.findings).toHaveLength(1);

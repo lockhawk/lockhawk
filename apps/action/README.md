@@ -1,4 +1,4 @@
-# npm-scanner GitHub Action
+# lockhawk GitHub Action
 
 Scan your npm/JavaScript dependencies for known vulnerabilities on every push or
 pull request, fail the build on high-severity issues, and surface findings in the
@@ -20,11 +20,11 @@ permissions:
   security-events: write # required to upload SARIF
 
 jobs:
-  npm-scanner:
+  lockhawk:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: npm-scanner/npm-scanner@v1
+      - uses: lockhawk/lockhawk@v1
         with:
           fail-on: high
 ```
@@ -39,7 +39,7 @@ jobs:
 | `offline`            | `true`   | Warm + use the cached offline OSV DB (fast, recommended) |
 | `upload-sarif`       | `true`   | Upload SARIF to the Security tab                         |
 | `prod-only`          | `false`  | Ignore dev dependencies                                  |
-| `version`            | `latest` | npm-scanner version to run                               |
+| `version`            | `latest` | lockhawk version to run                                  |
 
 ## Outputs
 

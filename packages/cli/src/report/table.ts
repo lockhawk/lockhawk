@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import type { ScanResult, Severity } from '@npm-scanner/core';
+import type { ScanResult, Severity } from '@lockhawk/core';
 
 const paint: Record<Severity, (s: string) => string> = {
   critical: (s) => chalk.bgRed.white.bold(` ${s} `),
@@ -17,7 +17,7 @@ export function renderTable(result: ScanResult): string {
   const { summary, target, stats, database } = result;
 
   lines.push(
-    chalk.bold(`\nnpm-scanner`) +
+    chalk.bold(`\nlockhawk`) +
       chalk.dim(
         ` · ${target.root.name}${target.root.version ? `@${target.root.version}` : ''} · ${target.manager} · ${stats.totalPackages} packages`,
       ),

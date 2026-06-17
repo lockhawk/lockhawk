@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Shared data model for npm-scanner.
+// Shared data model for lockhawk.
 //
 // Every package (CLI, report UI, GitHub Action) depends on these types — this
 // is the contract that keeps the pipeline stages and the reporters in sync.

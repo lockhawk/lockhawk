@@ -1,8 +1,8 @@
 import { writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import ora from 'ora';
-import { LockfileError, scan, shouldFail } from '@npm-scanner/core';
-import type { ScanOptions, ScanResult, Severity, SourceMode } from '@npm-scanner/core';
+import { LockfileError, scan, shouldFail } from '@lockhawk/core';
+import type { ScanOptions, ScanResult, Severity, SourceMode } from '@lockhawk/core';
 import { renderResult } from '../report/render.js';
 import type { Format } from '../report/render.js';
 import { loadFileConfig, readIgnoreFile } from '../config.js';
@@ -42,7 +42,7 @@ export async function runScan(pathArg: string, cli: ScanCliOptions): Promise<voi
   const ignore = [
     ...(cli.ignore ?? []),
     ...(fileConfig.ignore ?? []),
-    ...readIgnoreFile(cli.ignoreFile ?? join(dir, '.npmscanignore')),
+    ...readIgnoreFile(cli.ignoreFile ?? join(dir, '.lockhawkignore')),
   ];
 
   const useSpinner = format === 'table' && Boolean(process.stderr.isTTY) && !process.env.CI;
@@ -72,7 +72,7 @@ export async function runScan(pathArg: string, cli: ScanCliOptions): Promise<voi
   } catch (err) {
     spinner?.stop();
     const message = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`npm-scanner: ${message}\n`);
+    process.stderr.write(`lockhawk: ${message}\n`);
     if (err instanceof LockfileError) process.exitCode = EXIT.USAGE;
     else process.exitCode = cli.strictNetwork ? EXIT.NETWORK : EXIT.INTERNAL;
     return;

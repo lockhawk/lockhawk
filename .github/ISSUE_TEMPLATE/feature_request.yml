@@ -13,7 +13,7 @@ body:
     id: proposal
     attributes:
       label: Proposed solution
-      description: What would you like npm-scanner to do? CLI flags, output, behavior, etc.
+      description: What would you like lockhawk to do? CLI flags, output, behavior, etc.
     validations:
       required: true
   - type: textarea

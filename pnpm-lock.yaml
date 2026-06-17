@@ -28,7 +28,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@npm-scanner/core':
+      '@lockhawk/core':
         specifier: workspace:*
         version: link:../core
       chalk:
@@ -50,7 +50,7 @@ importers:
         specifier: ^8.1.1
         version: 8.2.0
     devDependencies:
-      '@npm-scanner/report-ui':
+      '@lockhawk/report-ui':
         specifier: workspace:*
         version: link:../report-ui
       '@types/node':
@@ -130,7 +130,7 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
     devDependencies:
-      '@npm-scanner/core':
+      '@lockhawk/core':
         specifier: workspace:*
         version: link:../core
       '@types/react':

@@ -5,8 +5,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { offlineDbDir, offlineMetaPath, shardBucket } from '@npm-scanner/core';
-import type { OsvVulnerability, ScanResult } from '@npm-scanner/core';
+import { offlineDbDir, offlineMetaPath, shardBucket } from '@lockhawk/core';
+import type { OsvVulnerability, ScanResult } from '@lockhawk/core';
 
 const cliPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'index.js');
 const built = existsSync(cliPath);
@@ -36,7 +36,7 @@ function seedDb(cacheDir: string, pkg: string, advisory: OsvVulnerability): void
 }
 
 function makeProject(deps: Record<string, string>): string {
-  const dir = mkdtempSync(join(tmpdir(), 'npm-scanner-e2e-'));
+  const dir = mkdtempSync(join(tmpdir(), 'lockhawk-e2e-'));
   writeFileSync(
     join(dir, 'package.json'),
     JSON.stringify({ name: 'e2e', version: '1.0.0', dependencies: deps }),
@@ -84,7 +84,7 @@ suite('CLI end-to-end (offline, no network)', () => {
   let cacheDir: string;
 
   beforeAll(() => {
-    cacheDir = mkdtempSync(join(tmpdir(), 'npm-scanner-cache-'));
+    cacheDir = mkdtempSync(join(tmpdir(), 'lockhawk-cache-'));
     seedDb(cacheDir, 'evil-pkg', VULN);
   });
 
@@ -162,7 +162,7 @@ suite('CLI end-to-end (offline, no network)', () => {
   });
 
   it('exits 2 with a helpful message when no lockfile is present', () => {
-    const empty = mkdtempSync(join(tmpdir(), 'npm-scanner-empty-'));
+    const empty = mkdtempSync(join(tmpdir(), 'lockhawk-empty-'));
     const { status } = run(['scan', empty, '--offline', '--cache-dir', cacheDir]);
     expect(status).toBe(2);
   });

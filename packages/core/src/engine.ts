@@ -17,7 +17,7 @@ import { createSource } from './osv/source.js';
 import type { VulnSource } from './osv/source.js';
 import type { PackageRef } from './osv/client.js';
 
-export const TOOL = { name: 'npm-scanner', version: '0.1.0' } as const;
+export const TOOL = { name: 'lockhawk', version: '0.1.0' } as const;
 
 /**
  * Run a full scan: load and normalize the lockfile, query OSV for the unique

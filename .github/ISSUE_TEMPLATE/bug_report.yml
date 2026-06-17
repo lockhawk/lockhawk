@@ -18,7 +18,7 @@ body:
       label: Steps to reproduce
       description: The exact command(s) you ran, and a minimal lockfile/project if possible.
       placeholder: |
-        1. npm-scanner scan ./my-project --online
+        1. lockhawk scan ./my-project --online
         2. ...
     validations:
       required: true
@@ -32,8 +32,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: npm-scanner version
-      placeholder: 'output of `npm-scanner --version`'
+      label: lockhawk version
+      placeholder: 'output of `lockhawk --version`'
     validations:
       required: true
   - type: input

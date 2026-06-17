@@ -1,16 +1,16 @@
 {
-  "name": "@npm-scanner/core",
+  "name": "@lockhawk/core",
   "version": "0.1.0",
-  "description": "Scanning engine for npm-scanner: lockfile parsing, OSV matching, CVSS scoring, reports",
+  "description": "Scanning engine for lockhawk: lockfile parsing, OSV matching, CVSS scoring, reports",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/npm-scanner/npm-scanner.git",
+    "url": "git+https://github.com/lockhawk/lockhawk.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/npm-scanner/npm-scanner#readme",
-  "bugs": "https://github.com/npm-scanner/npm-scanner/issues",
+  "homepage": "https://github.com/lockhawk/lockhawk#readme",
+  "bugs": "https://github.com/lockhawk/lockhawk/issues",
   "publishConfig": {
     "access": "public"
   },

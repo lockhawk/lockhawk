@@ -45,7 +45,7 @@ const adv = (id: string, name: string): OsvVulnerability => ({
 
 describe('offline DB shards (gzip round-trip)', () => {
   it('loads advisories for requested packages from gzipped buckets', async () => {
-    const cacheDir = mkdtempSync(join(tmpdir(), 'npm-scanner-offdb-'));
+    const cacheDir = mkdtempSync(join(tmpdir(), 'lockhawk-offdb-'));
     seed(cacheDir, { lodash: [adv('GHSA-l', 'lodash')], minimist: [adv('GHSA-m', 'minimist')] });
 
     const map = await loadAdvisoriesForPackages(cacheDir, ['lodash', 'minimist', 'safe-pkg']);
@@ -55,7 +55,7 @@ describe('offline DB shards (gzip round-trip)', () => {
   });
 
   it('throws OfflineDbMissingError when the DB has not been built', async () => {
-    const empty = mkdtempSync(join(tmpdir(), 'npm-scanner-offdb-empty-'));
+    const empty = mkdtempSync(join(tmpdir(), 'lockhawk-offdb-empty-'));
     await expect(loadAdvisoriesForPackages(empty, ['lodash'])).rejects.toBeInstanceOf(
       OfflineDbMissingError,
     );

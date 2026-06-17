@@ -1,6 +1,6 @@
 ---
-'@npm-scanner/core': minor
-'npm-scanner': minor
+'@lockhawk/core': minor
+'lockhawk': minor
 ---
 
 Initial release: fast, free, accurate npm dependency vulnerability scanner powered by

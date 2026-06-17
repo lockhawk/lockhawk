@@ -54,9 +54,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
       # Scan this repo's own lockfile online; never fail CI on self-scan.
-      - run: node packages/cli/dist/index.js scan . --online --format sarif --output npm-scanner.sarif --fail-on critical || true
+      - run: node packages/cli/dist/index.js scan . --online --format sarif --output lockhawk.sarif --fail-on critical || true
       - uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: npm-scanner.sarif
-          category: npm-scanner-self
+          sarif_file: lockhawk.sarif
+          category: lockhawk-self
         continue-on-error: true

@@ -1,4 +1,4 @@
-# Contributing to npm-scanner
+# Contributing to lockhawk
 
 Thanks for your interest — contributions of all kinds are welcome: bug reports, fixes, new
 features, docs, fixtures, and ideas. This guide gets you productive fast.
@@ -9,21 +9,21 @@ By participating you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md)
 
 This is a [pnpm](https://pnpm.io) monorepo:
 
-| Path                 | What it is                                                                          |
-| -------------------- | ----------------------------------------------------------------------------------- |
-| `packages/core`      | `@npm-scanner/core` — the scanning engine (lockfiles → graph → OSV match → reports) |
-| `packages/cli`       | `npm-scanner` — the command-line interface                                          |
-| `packages/report-ui` | `@npm-scanner/report-ui` — the React dashboard (single-file build)                  |
-| `apps/action`        | the GitHub Action (composite)                                                       |
-| `docs/`              | CI/CD recipes and other docs                                                        |
+| Path                 | What it is                                                                       |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `packages/core`      | `@lockhawk/core` — the scanning engine (lockfiles → graph → OSV match → reports) |
+| `packages/cli`       | `lockhawk` — the command-line interface                                          |
+| `packages/report-ui` | `@lockhawk/report-ui` — the React dashboard (single-file build)                  |
+| `apps/action`        | the GitHub Action (composite)                                                    |
+| `docs/`              | CI/CD recipes and other docs                                                     |
 
 ## Getting set up
 
 Requirements: **Node ≥ 18.18** and **pnpm 9** (`corepack enable pnpm`).
 
 ```bash
-git clone https://github.com/npm-scanner/npm-scanner.git
-cd npm-scanner
+git clone https://github.com/lockhawk/lockhawk.git
+cd lockhawk
 pnpm install
 pnpm build        # builds core → report-ui → cli (the CLI bundles the dashboard shell)
 pnpm test         # runs the whole vitest suite
@@ -36,9 +36,9 @@ pnpm test           # all tests
 pnpm typecheck      # tsc --noEmit across packages
 pnpm lint           # prettier --check + typecheck
 pnpm format         # prettier --write
-pnpm --filter @npm-scanner/core test       # one package
+pnpm --filter @lockhawk/core test       # one package
 node packages/cli/dist/index.js scan ./some/project --online   # run the built CLI
-pnpm --filter @npm-scanner/report-ui dev   # dashboard dev server (uses sample data)
+pnpm --filter @lockhawk/report-ui dev   # dashboard dev server (uses sample data)
 ```
 
 ## Development workflow
@@ -63,8 +63,8 @@ pnpm --filter @npm-scanner/report-ui dev   # dashboard dev server (uses sample d
 
 ## Where to start
 
-- Issues labelled [`good first issue`](https://github.com/npm-scanner/npm-scanner/labels/good%20first%20issue)
-  and [`help wanted`](https://github.com/npm-scanner/npm-scanner/labels/help%20wanted).
+- Issues labelled [`good first issue`](https://github.com/lockhawk/lockhawk/labels/good%20first%20issue)
+  and [`help wanted`](https://github.com/lockhawk/lockhawk/labels/help%20wanted).
 - Add lockfile fixtures for edge cases (monorepo workspaces, aliases, `git:`/`file:` deps).
 - The [roadmap in the README](README.md#️-roadmap).
 

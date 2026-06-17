@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🛡️ npm-scanner
+# 🛡️ lockhawk
 
 ### Fast, free, and accurate npm dependency vulnerability scanning — for your machine **and** your pipeline.
 
-[![CI](https://github.com/npm-scanner/npm-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/npm-scanner/npm-scanner/actions/workflows/ci.yml)
+[![CI](https://github.com/lockhawk/lockhawk/actions/workflows/ci.yml/badge.svg)](https://github.com/lockhawk/lockhawk/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/)
@@ -17,16 +17,16 @@
 
 ---
 
-`npm-scanner` reads your lockfile (`package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`),
+`lockhawk` reads your lockfile (`package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`),
 builds the full dependency tree — including transitive dependencies — and checks every package
 against the free [OSV.dev](https://osv.dev) vulnerability database. It produces a beautiful,
 self-contained HTML dashboard and machine-readable reports so you can understand and prioritise
 fixes. **No account, no API key, no usage limits.**
 
 ```console
-$ npx npm-scanner scan
+$ npx lockhawk scan
 
-npm-scanner · acme-web@2.4.1 · npm · 842 packages
+lockhawk · acme-web@2.4.1 · npm · 842 packages
 
 ┌────────────┬──────────────────────────┬──────────────────────┬────────────┬──────────────────────────────────┐
 │ Severity   │ Package                  │ Advisory             │ Fixed in   │ Path                             │
@@ -53,7 +53,7 @@ Data from OSV.dev · database: offline · scanned in 184ms
 - **📦 Every package manager** — npm (`package-lock` v1/v2/v3 + shrinkwrap), Yarn (classic &
   Berry), and pnpm (v5/v6/v9), including workspaces.
 - **📊 Beautiful analysis** — a self-contained HTML dashboard you can open anywhere or attach as
-  a CI artifact, plus `npm-scanner serve` for interactive drill-down with dependency-path tracing
+  a CI artifact, plus `lockhawk serve` for interactive drill-down with dependency-path tracing
   and mitigation guidance.
 - **🔌 Built for CI/CD** — first-class **SARIF** (GitHub Security tab), **JUnit** (Azure DevOps /
   GitLab test dashboards), JSON, and a stable exit-code contract for build gating.
@@ -62,28 +62,28 @@ Data from OSV.dev · database: offline · scanned in 184ms
 
 ```bash
 # One-off, no install
-npx npm-scanner scan
+npx lockhawk scan
 
 # Fail the build on high+ severity and emit SARIF for the GitHub Security tab
-npx npm-scanner scan --format sarif --output scan.sarif --fail-on high
+npx lockhawk scan --format sarif --output scan.sarif --fail-on high
 
 # Generate the standalone HTML dashboard
-npx npm-scanner scan --format html --output report.html
+npx lockhawk scan --format html --output report.html
 
 # Explore findings in an interactive local dashboard
-npx npm-scanner serve
+npx lockhawk serve
 ```
 
 Install it as a dev dependency to use in scripts:
 
 ```bash
-npm install --save-dev npm-scanner
+npm install --save-dev lockhawk
 ```
 
 ## 🧭 CLI
 
 ```
-npm-scanner scan [path]            Scan a project (default command)
+lockhawk scan [path]            Scan a project (default command)
   -f, --format <fmt>               table | json | sarif | html | junit   (default: table)
   -o, --output <file>              write the report to a file
   --severity-threshold <level>     minimum severity to report
@@ -92,12 +92,12 @@ npm-scanner scan [path]            Scan a project (default command)
   --strict-network                 fail on network errors instead of degrading
   --prod-only                      ignore dev dependencies
   --ignore <ids...>                suppress specific advisory ids
-  --ignore-file <path>             a .npmscanignore file (ids, optional expiry date)
+  --ignore-file <path>             a .lockhawkignore file (ids, optional expiry date)
   --cache-dir <dir> | --cache-ttl <hours> | --no-cache | --concurrency <n>
 
-npm-scanner report -i result.json -f html -o report.html   Re-render a saved result
-npm-scanner serve [path]                                    Interactive local dashboard
-npm-scanner db update | status | path                       Manage the offline OSV database
+lockhawk report -i result.json -f html -o report.html   Re-render a saved result
+lockhawk serve [path]                                    Interactive local dashboard
+lockhawk db update | status | path                       Manage the offline OSV database
 ```
 
 ### Exit codes
@@ -115,7 +115,7 @@ Plain network failures never fail the build unless you opt in with `--strict-net
 ## 📊 The dashboard
 
 `--format html` produces a **single self-contained file** (all JS/CSS inlined, zero external
-requests) that works offline, from `file://`, or as a CI artifact. `npm-scanner serve` serves the
+requests) that works offline, from `file://`, or as a CI artifact. `lockhawk serve` serves the
 same app live for unlimited drill-down. Each finding shows a decoded CVSS breakdown, the dependency
 path that pulls the package in (`root › … › vulnerable`), the nearest safe version, and a copy-ready
 upgrade command.
@@ -133,13 +133,13 @@ rendering findings natively in the Azure **Tests** tab via JUnit) are in
 permissions: { contents: read, security-events: write }
 steps:
   - uses: actions/checkout@v4
-  - uses: npm-scanner/npm-scanner@v1
+  - uses: lockhawk/lockhawk@v1
     with: { fail-on: high }
 ```
 
 ## ⚙️ Configuration
 
-Add a `.npmscannerrc`, `npm-scanner.config.js`, or a `"npm-scanner"` key in `package.json`:
+Add a `.lockhawkrc`, `lockhawk.config.js`, or a `"lockhawk"` key in `package.json`:
 
 ```json
 {
@@ -150,7 +150,7 @@ Add a `.npmscannerrc`, `npm-scanner.config.js`, or a `"npm-scanner"` key in `pac
 }
 ```
 
-A `.npmscanignore` file suppresses advisories, with an optional expiry so suppressions don't
+A `.lockhawkignore` file suppresses advisories, with an optional expiry so suppressions don't
 silently outlive their review:
 
 ```
@@ -161,7 +161,7 @@ GHSA-xxxx-xxxx-xxxx 2026-12-31
 ## 🧩 Programmatic API
 
 ```ts
-import { scan } from '@npm-scanner/core';
+import { scan } from '@lockhawk/core';
 
 const result = await scan({ path: '.', mode: 'auto', failOn: 'high' });
 console.log(result.summary, result.findings);
@@ -179,19 +179,19 @@ console.log(result.summary, result.findings);
 
 ## 📦 Packages
 
-| Package                                        | Description                             |
-| ---------------------------------------------- | --------------------------------------- |
-| [`npm-scanner`](packages/cli)                  | The CLI (the `npm-scanner` binary).     |
-| [`@npm-scanner/core`](packages/core)           | The scanning engine (programmatic API). |
-| [`@npm-scanner/report-ui`](packages/report-ui) | The React dashboard / report UI.        |
-| [`apps/action`](apps/action)                   | The GitHub Action wrapper.              |
+| Package                                     | Description                             |
+| ------------------------------------------- | --------------------------------------- |
+| [`lockhawk`](packages/cli)                  | The CLI (the `lockhawk` binary).        |
+| [`@lockhawk/core`](packages/core)           | The scanning engine (programmatic API). |
+| [`@lockhawk/report-ui`](packages/report-ui) | The React dashboard / report UI.        |
+| [`apps/action`](apps/action)                | The GitHub Action wrapper.              |
 
 ## 🤝 Contributing
 
 Contributions are very welcome — this is a community project. See
 **[CONTRIBUTING.md](CONTRIBUTING.md)** to get set up (it's a `pnpm` monorepo; `pnpm install &&
 pnpm build && pnpm test`). Good places to start are labelled
-[`good first issue`](https://github.com/npm-scanner/npm-scanner/labels/good%20first%20issue).
+[`good first issue`](https://github.com/lockhawk/lockhawk/labels/good%20first%20issue).
 
 By participating you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -205,7 +205,7 @@ By participating you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## 🔐 Security
 
-Found a vulnerability in npm-scanner itself? Please report it privately — see
+Found a vulnerability in lockhawk itself? Please report it privately — see
 **[SECURITY.md](SECURITY.md)**. Don't open a public issue for security reports.
 
 ## 📄 License

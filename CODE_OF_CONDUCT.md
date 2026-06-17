@@ -44,7 +44,7 @@ officially representing the community in public spaces.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported privately to
 the maintainers using GitHub's
-[private vulnerability reporting](https://github.com/npm-scanner/npm-scanner/security/advisories/new)
+[private vulnerability reporting](https://github.com/lockhawk/lockhawk/security/advisories/new)
 on the repository's **Security** tab (it is a confidential channel to the maintainers and works for
 conduct reports too). All complaints will be reviewed and investigated promptly and fairly. All
 community leaders are obligated to respect the privacy and security of the reporter of any incident.

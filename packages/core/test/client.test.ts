@@ -18,7 +18,7 @@ afterEach(() => {
 });
 afterAll(() => server.close());
 
-const cacheDir = (): string => mkdtempSync(join(tmpdir(), 'npm-scanner-client-'));
+const cacheDir = (): string => mkdtempSync(join(tmpdir(), 'lockhawk-client-'));
 
 const vulnHandler = http.get(`${API}/vulns/:id`, ({ params }) => {
   vulnCalls += 1;

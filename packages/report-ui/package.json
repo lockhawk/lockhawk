@@ -1,7 +1,7 @@
 {
-  "name": "@npm-scanner/report-ui",
+  "name": "@lockhawk/report-ui",
   "version": "0.1.0",
-  "description": "Interactive dashboard / static report UI for npm-scanner",
+  "description": "Interactive dashboard / static report UI for lockhawk",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -15,7 +15,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@npm-scanner/core": "workspace:*",
+    "@lockhawk/core": "workspace:*",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",

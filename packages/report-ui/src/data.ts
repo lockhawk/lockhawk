@@ -1,4 +1,4 @@
-import type { ScanResult } from '@npm-scanner/core';
+import type { ScanResult } from '@lockhawk/core';
 
 declare global {
   interface Window {
@@ -25,7 +25,7 @@ export async function loadScanResult(): Promise<ScanResult> {
 
 const SAMPLE: ScanResult = {
   schemaVersion: 1,
-  tool: { name: 'npm-scanner', version: '0.1.0' },
+  tool: { name: 'lockhawk', version: '0.1.0' },
   scannedAt: '2026-06-17T18:54:13.551Z',
   target: {
     path: '/demo',

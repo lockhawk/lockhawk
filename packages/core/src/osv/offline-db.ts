@@ -29,7 +29,7 @@ export interface UpdateResult {
 
 export class OfflineDbMissingError extends Error {
   constructor() {
-    super('No offline OSV database found. Run `npm-scanner db update` first.');
+    super('No offline OSV database found. Run `lockhawk db update` first.');
     this.name = 'OfflineDbMissingError';
   }
 }
@@ -76,7 +76,7 @@ export async function updateOfflineDatabase(opts: {
     throw new Error(`OSV database download failed: HTTP ${res.status}`);
   }
 
-  const zipPath = join(tmpdir(), `npm-scanner-osv-${process.pid}.zip`);
+  const zipPath = join(tmpdir(), `lockhawk-osv-${process.pid}.zip`);
   await pipeline(
     Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]),
     createWriteStream(zipPath),
