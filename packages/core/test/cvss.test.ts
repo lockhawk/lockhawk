@@ -25,10 +25,19 @@ describe('scoreFromVector (CVSS v3.1)', () => {
     expect(scoreFromVector('CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')?.score).toBe(9.8);
   });
 
-  it('returns null for a v4 vector (not natively scored)', () => {
-    expect(
-      scoreFromVector('CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N'),
-    ).toBeNull();
+  // Expected values produced by the FIRST.org reference calculator.
+  it.each([
+    ['CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H', 10, 'critical'],
+    ['CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N', 9.3, 'critical'],
+    ['CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N', 6.9, 'medium'],
+    ['CVSS:4.0/AV:A/AC:L/AT:N/PR:L/UI:P/VC:H/VI:L/VA:L/SC:H/SI:L/SA:L', 7, 'high'],
+    ['CVSS:4.0/AV:L/AC:H/AT:P/PR:H/UI:A/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N', 1, 'low'],
+    ['CVSS:4.0/AV:P/AC:H/AT:P/PR:H/UI:A/VC:N/VI:N/VA:N/SC:N/SI:N/SA:N', 0, 'none'],
+  ])('scores CVSS v4.0 vector %s as %d', (vector, score, level) => {
+    const result = scoreFromVector(vector as string);
+    expect(result?.score).toBe(score);
+    expect(result?.level).toBe(level);
+    expect(result?.version).toBe('CVSS:4.0');
   });
 });
 

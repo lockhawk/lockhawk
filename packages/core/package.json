@@ -4,6 +4,16 @@
   "description": "Scanning engine for npm-scanner: lockfile parsing, OSV matching, CVSS scoring, reports",
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/npm-scanner/npm-scanner.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/npm-scanner/npm-scanner#readme",
+  "bugs": "https://github.com/npm-scanner/npm-scanner/issues",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

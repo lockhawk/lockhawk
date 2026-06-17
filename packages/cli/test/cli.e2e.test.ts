@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gzipSync } from 'node:zlib';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { offlineDbDir, offlineMetaPath, shardBucket } from '@npm-scanner/core';
 import type { OsvVulnerability, ScanResult } from '@npm-scanner/core';
@@ -17,7 +18,11 @@ const suite = built ? describe : describe.skip;
 function seedDb(cacheDir: string, pkg: string, advisory: OsvVulnerability): void {
   const dir = join(offlineDbDir(cacheDir), 'by-name');
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, `${shardBucket(pkg)}.json`), JSON.stringify({ [pkg]: [advisory] }));
+  // Shards are gzipped on disk (matches the offline-db reader).
+  writeFileSync(
+    join(dir, `${shardBucket(pkg)}.json.gz`),
+    gzipSync(Buffer.from(JSON.stringify({ [pkg]: [advisory] }))),
+  );
   writeFileSync(
     offlineMetaPath(cacheDir),
     JSON.stringify({

@@ -1,9 +1,9 @@
 import type { OsvVulnerability, Severity, SeverityInfo } from '../types.js';
+import { scoreV4 } from './cvss4.js';
 
-// CVSS v3.0 / v3.1 base-score computation from a vector string.
-// We compute v3 natively (the formula is stable and public) and prefer it for
-// numeric scoring. CVSS v4 base scoring requires a large lookup table; when only
-// a v4 vector is available we fall back to the advisory's qualitative severity.
+// CVSS base-score computation from a vector string. v3.0/v3.1 are computed from
+// the public formula; v4.0 is computed via the FIRST.org reference algorithm
+// (see cvss4.ts). Both feed the same severity-band mapping.
 
 const AV: Record<string, number> = { N: 0.85, A: 0.62, L: 0.55, P: 0.2 };
 const AC: Record<string, number> = { L: 0.77, H: 0.44 };
@@ -54,10 +54,14 @@ function roundUp(input: number): number {
   return (Math.floor(scaled / 10000) + 1) / 10;
 }
 
-/** Compute a base score from a CVSS v3.0/v3.1 vector string, or null if unparseable. */
+/** Compute a base score from a CVSS v3.0/v3.1/v4.0 vector string, or null if unparseable. */
 export function scoreFromVector(vector: string): CvssResult | null {
   const parts = vector.split('/');
   const header = parts[0] ?? '';
+  if (header === 'CVSS:4.0') {
+    const score = scoreV4(vector);
+    return score === null ? null : { score, level: levelFromScore(score), version: header };
+  }
   if (!/^CVSS:3\.[01]$/.test(header)) return null;
 
   const m: Record<string, string> = {};

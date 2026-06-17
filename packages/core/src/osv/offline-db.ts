@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import yauzl from 'yauzl';
 import type { OsvVulnerability } from '../types.js';
 import { offlineDbDir, offlineMetaPath, shardBucket } from '../cache/paths.js';
@@ -109,7 +110,9 @@ function bucketDir(cacheDir: string): string {
 }
 
 function bucketPath(cacheDir: string, bucket: number): string {
-  return join(bucketDir(cacheDir), `${bucket}.json`);
+  // Shards are gzipped: advisory JSON compresses ~5–6×, keeping the on-disk DB
+  // (and the CI cache that stores it) small.
+  return join(bucketDir(cacheDir), `${bucket}.json.gz`);
 }
 
 /**
@@ -135,7 +138,9 @@ export async function loadAdvisoriesForPackages(
   await Promise.all(
     [...namesByBucket.entries()].map(async ([bucket, bucketNames]) => {
       try {
-        const data = JSON.parse(await readFile(bucketPath(cacheDir, bucket), 'utf8')) as Bucket;
+        const data = JSON.parse(
+          gunzipSync(await readFile(bucketPath(cacheDir, bucket))).toString('utf8'),
+        ) as Bucket;
         for (const name of bucketNames) {
           const records = data[name];
           if (records?.length) result.set(name, records);
@@ -190,7 +195,9 @@ async function writeShards(
     await Promise.all(
       entries
         .slice(i, i + BATCH)
-        .map(([bucket, map]) => writeFile(bucketPath(cacheDir, bucket), JSON.stringify(map))),
+        .map(([bucket, map]) =>
+          writeFile(bucketPath(cacheDir, bucket), gzipSync(Buffer.from(JSON.stringify(map)))),
+        ),
     );
   }
 }
