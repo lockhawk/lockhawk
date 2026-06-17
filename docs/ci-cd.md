@@ -41,6 +41,12 @@ Or wire it up by hand for full control:
 
 ## Azure DevOps
 
+The most useful way to see results **inside** Azure DevOps is the native **Tests**
+tab: emit JUnit XML (each vulnerability is a failed test, with severity, CVSS, fix
+and dependency path in the failure detail; a clean scan is one passing test) and
+publish it with `PublishTestResults`. Also publish the self-contained HTML report
+as an artifact for the full interactive dashboard.
+
 ```yaml
 - task: Cache@2
   inputs:
@@ -48,21 +54,46 @@ Or wire it up by hand for full control:
     path: '$(HOME)/.cache/npm-scanner'
 - script: npx npm-scanner db update
   displayName: 'Warm OSV database'
+
+# Build report (do not fail the step here — let the Tests tab show results first)
 - script: >
     npx npm-scanner scan
-    --offline --format sarif
-    --output "$(Build.ArtifactStagingDir)/scan.sarif"
-    --fail-on high
-  displayName: 'Scan dependencies'
+    --offline --format junit
+    --output "$(Build.ArtifactStagingDir)/npm-scanner.junit.xml"
+    --fail-on none
+  displayName: 'Scan dependencies (JUnit)'
+
+# Renders in the native Tests tab — failed tests = vulnerabilities
+- task: PublishTestResults@2
+  condition: always()
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '$(Build.ArtifactStagingDir)/npm-scanner.junit.xml'
+    testRunTitle: 'Dependency vulnerabilities'
+    failTaskOnFailedTests: true # fail the pipeline when there are findings
+
+# Full interactive dashboard, downloadable from the build's Artifacts
+- script: >
+    npx npm-scanner scan . --offline --format html
+    --output "$(Build.ArtifactStagingDir)/npm-scanner-report.html"
+    --fail-on none
+  displayName: 'Generate HTML report'
+  condition: always()
 - task: PublishBuildArtifacts@1
   condition: always()
   inputs:
-    pathToPublish: '$(Build.ArtifactStagingDir)/scan.sarif'
-    artifactName: 'security-scan'
+    pathToPublish: '$(Build.ArtifactStagingDir)/npm-scanner-report.html'
+    artifactName: 'security-report'
 ```
 
-Install the **SARIF SAST Scans Tab** marketplace extension to view results in
-the build summary.
+This gives you findings rendered **natively in the Tests tab** (no extension
+needed), gating via `failTaskOnFailedTests`, and the full HTML dashboard as a
+downloadable artifact. Prefer the GitHub Security tab? Use `--format sarif` and
+the **SARIF SAST Scans Tab** marketplace extension instead.
+
+> The JUnit reporter works the same way in GitHub Actions (via a test-reporter
+> action) and GitLab CI (`artifacts:reports:junit:` surfaces it in the pipeline
+> and merge-request test widget).
 
 ## GitLab CI
 
@@ -76,10 +107,15 @@ dependency_scan:
     NPM_SCANNER_CACHE: '.npm-scanner-cache'
   script:
     - npx npm-scanner db update
+    # JUnit for the pipeline/MR test widget…
+    - npx npm-scanner scan --offline --format junit --output scan.junit.xml --fail-on none
+    # …and the full HTML dashboard as a browsable artifact.
     - npx npm-scanner scan --offline --format html --output scan-report.html --fail-on high
   artifacts:
     when: always
     paths: ['scan-report.html']
+    reports:
+      junit: scan.junit.xml
 ```
 
 ## Exit codes
