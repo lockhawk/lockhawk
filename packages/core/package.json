@@ -1,0 +1,45 @@
+{
+  "name": "@npm-scanner/core",
+  "version": "0.1.0",
+  "description": "Scanning engine for npm-scanner: lockfile parsing, OSV matching, CVSS scoring, reports",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@yarnpkg/lockfile": "^1.1.0",
+    "env-paths": "^3.0.0",
+    "js-yaml": "^4.1.0",
+    "p-limit": "^6.1.0",
+    "p-retry": "^6.2.1",
+    "proper-lockfile": "^4.1.2",
+    "semver": "^7.6.3",
+    "yauzl": "^3.2.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/proper-lockfile": "^4.1.4",
+    "@types/semver": "^7.5.8",
+    "@types/yauzl": "^2.10.3",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

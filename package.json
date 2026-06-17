@@ -1,0 +1,26 @@
+{
+  "name": "npm-scanner-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Fast, free, accurate npm dependency vulnerability scanner — local + CI/CD, powered by OSV.dev",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter \"./packages/**\" build",
+    "build:all": "pnpm -r build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "pnpm -r exec tsc --noEmit",
+    "lint": "prettier --check . && pnpm run typecheck",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

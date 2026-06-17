@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.DS_Store
+*.log
+.cache/
+.vite/
+.turbo/
+.eslintcache
+# scanner output / local cache used during dev
+*.sarif
+scan-result.json
+report.html
