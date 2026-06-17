@@ -2,12 +2,12 @@
 
 ## Reporting a vulnerability
 
-If you find a security vulnerability **in npm-scanner itself**, please report it privately —
-**do not open a public issue**.
+If you find a security vulnerability **in npm-scanner itself**, please report it privately
+through GitHub — **do not open a public issue**.
 
-- Preferred: use GitHub's [private vulnerability reporting](https://github.com/npm-scanner/npm-scanner/security/advisories/new)
-  ("Report a vulnerability" on the repository's **Security** tab).
-- Alternatively, email the maintainers at **security@example.com** _(update this address before publishing)_.
+👉 **[Report a vulnerability privately](https://github.com/npm-scanner/npm-scanner/security/advisories/new)**
+(the "Report a vulnerability" button on the repository's **Security** tab). This opens a private
+advisory visible only to you and the maintainers.
 
 Please include:
 
