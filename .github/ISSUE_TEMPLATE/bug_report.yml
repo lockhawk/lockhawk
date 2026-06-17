@@ -1,0 +1,51 @@
+name: 🐛 Bug report
+description: Something isn't working as expected
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to file a bug! For **security** issues, please use [private reporting](../../security/advisories/new) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The exact command(s) you ran, and a minimal lockfile/project if possible.
+      placeholder: |
+        1. npm-scanner scan ./my-project --online
+        2. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: manager
+    attributes:
+      label: Package manager
+      options: [npm, yarn (classic), yarn (berry), pnpm, not sure]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: npm-scanner version
+      placeholder: 'output of `npm-scanner --version`'
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: 'Node version, OS, CI provider (if applicable)'
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output / logs
+      description: Relevant CLI output (use `--format json` if helpful). This is automatically formatted as code.
+      render: shell

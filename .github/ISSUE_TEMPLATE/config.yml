@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔐 Report a security vulnerability
+    url: https://github.com/npm-scanner/npm-scanner/security/advisories/new
+    about: Please report vulnerabilities in npm-scanner privately, not as public issues.
+  - name: 💬 Questions & discussions
+    url: https://github.com/npm-scanner/npm-scanner/discussions
+    about: Ask questions and share ideas with the community.
