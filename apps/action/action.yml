@@ -1,0 +1,89 @@
+name: 'npm-scanner'
+description: 'Fast, free npm dependency vulnerability scan (OSV.dev) with SARIF upload to the Security tab'
+author: 'npm-scanner'
+branding:
+  icon: 'shield'
+  color: 'green'
+
+inputs:
+  path:
+    description: 'Project directory to scan'
+    default: '.'
+  fail-on:
+    description: 'Minimum severity that fails the build (none|low|medium|high|critical)'
+    default: 'high'
+  severity-threshold:
+    description: 'Minimum severity to include in the report'
+    default: 'low'
+  offline:
+    description: 'Warm and use the cached offline OSV database (fastest, recommended for CI)'
+    default: 'true'
+  upload-sarif:
+    description: 'Upload SARIF results to the GitHub code-scanning / Security tab'
+    default: 'true'
+  prod-only:
+    description: 'Ignore dev dependencies'
+    default: 'false'
+  version:
+    description: 'npm-scanner version to run via npx'
+    default: 'latest'
+
+outputs:
+  sarif-file:
+    description: 'Path to the generated SARIF file'
+    value: ${{ steps.scan.outputs.sarif-file }}
+  exit-code:
+    description: 'Scanner exit code (0 clean, 1 findings at/above fail-on)'
+    value: ${{ steps.scan.outputs.exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - id: meta
+      shell: bash
+      run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore OSV database cache
+      if: ${{ inputs.offline == 'true' }}
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/npm-scanner
+        key: npm-scanner-osv-${{ runner.os }}-${{ steps.meta.outputs.date }}
+        restore-keys: |
+          npm-scanner-osv-${{ runner.os }}-
+
+    - name: Warm offline database
+      if: ${{ inputs.offline == 'true' }}
+      shell: bash
+      run: npx -y npm-scanner@${{ inputs.version }} db update
+
+    - name: Scan
+      id: scan
+      shell: bash
+      run: |
+        set +e
+        SARIF="$RUNNER_TEMP/npm-scanner.sarif"
+        npx -y npm-scanner@${{ inputs.version }} scan "${{ inputs.path }}" \
+          --format sarif --output "$SARIF" \
+          --severity-threshold "${{ inputs.severity-threshold }}" \
+          --fail-on "${{ inputs.fail-on }}" \
+          ${{ inputs.offline == 'true' && '--offline' || '--online' }} \
+          ${{ inputs.prod-only == 'true' && '--prod-only' || '' }}
+        code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        echo "sarif-file=$SARIF" >> "$GITHUB_OUTPUT"
+        exit 0
+
+    - name: Upload SARIF to the Security tab
+      if: ${{ inputs.upload-sarif == 'true' && hashFiles(steps.scan.outputs.sarif-file) != '' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif-file }}
+        category: npm-scanner
+
+    - name: Fail the build on findings
+      if: ${{ steps.scan.outputs.exit-code != '0' }}
+      shell: bash
+      run: |
+        echo "::error title=npm-scanner::Found dependency vulnerabilities at or above '${{ inputs.fail-on }}' severity."
+        exit 1

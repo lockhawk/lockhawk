@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    name: build & test (node ${{ matrix.node }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node: [20, 22]
+        include:
+          - os: macos-latest
+            node: 22
+          - os: windows-latest
+            node: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:all
+      - run: pnpm run typecheck
+      - run: pnpm test
+      - name: Check formatting
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        run: pnpm run format:check
+
+  dogfood:
+    name: scan self
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      # Scan this repo's own lockfile online; never fail CI on self-scan.
+      - run: node packages/cli/dist/index.js scan . --online --format sarif --output npm-scanner.sarif --fail-on critical || true
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: npm-scanner.sarif
+          category: npm-scanner-self
+        continue-on-error: true
