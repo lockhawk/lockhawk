@@ -156,10 +156,25 @@ async function main() {
       fail('Working tree is not clean — commit or stash your changes first.');
     }
 
+    console.log('\n▶ Linting + typechecking…');
+    run('pnpm', ['run', 'lint']);
     console.log('\n▶ Testing…');
     run('pnpm', ['test']);
     console.log('\n▶ Building…');
     run('pnpm', ['run', 'build']);
+    console.log('\n▶ Auditing production dependencies…');
+    run('pnpm', ['audit', '--prod']);
+    console.log('\n▶ Scanning shipped dependencies for advisories (fail on high)…');
+    run('node', [
+      'packages/cli/dist/index.js',
+      'scan',
+      '.',
+      '--online',
+      '--strict-network',
+      '--prod-only',
+      '--fail-on',
+      'high',
+    ]);
 
     console.log(`\n▶ Setting version → ${version}…`);
     applyVersion(version);
