@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 import open from 'open';
 import { scan, toHtml, toJson } from '@lockhawk/core';
 import type { ScanResult, SourceMode } from '@lockhawk/core';
-import { loadReportShell } from '../report/shell.js';
 
 interface ServeOptions {
   input?: string;
@@ -25,7 +24,7 @@ export async function runServe(pathArg: string, opts: ServeOptions): Promise<voi
     result = await scan({ path: resolve(pathArg || '.'), mode });
   }
 
-  const html = toHtml(result, await loadReportShell());
+  const html = toHtml(result);
   const json = toJson(result);
 
   const server = createServer((req, res) => {
