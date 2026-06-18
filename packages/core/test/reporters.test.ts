@@ -4,7 +4,7 @@ import { scan } from '../src/engine.js';
 import { OsvDatabase } from '../src/osv/database.js';
 import { toJson } from '../src/report/json.js';
 import { toSarif } from '../src/report/sarif.js';
-import { toHtml } from '../src/report/html.js';
+import { toHtml, DATA_MARKER } from '../src/report/html.js';
 import type { ResolvedSource, VulnSource } from '../src/osv/source.js';
 import type { OsvVulnerability, ScanResult } from '../src/types.js';
 
@@ -95,5 +95,43 @@ describe('HTML reporter (fallback template)', () => {
     expect(html).not.toMatch(/<script[^>]+src=/);
     expect(html).not.toMatch(/<link\b/);
     expect(html).toContain('<style>');
+  });
+});
+
+describe('HTML reporter (shell injection)', () => {
+  // A shell mimicking the built report-UI: a marker in <head> and the inlined
+  // app bundle + closing </script> after it.
+  const shell = `<!doctype html>\n<html lang="en"><head>\n${DATA_MARKER}\n<script>boot();</script></head><body></body></html>`;
+
+  // Advisory text that exercises every special String.replace replacement
+  // pattern: $$, $&, $\` (prefix), $' (suffix) and $1 (capture group). Real OSV
+  // advisories embed exactly these — e.g. regex-escape code (`'\\$&'`) and
+  // ReDoS payloads written inline as `(.+)+$`.
+  const nasty = "regex escape uses '\\$&'; ReDoS payload `(.+)+$`; literal $$ and $' and $1 too";
+
+  async function renderWithDetails(details: string): Promise<{ html: string; data: ScanResult }> {
+    const evil: OsvVulnerability = { ...advisory, id: 'GHSA-nasty', details };
+    const r = await scan({ path: projectDir }, stub([evil]));
+    const out = toHtml(r, shell);
+    const m = out.match(/window\.__SCAN_RESULT__ = ([\s\S]*?);<\/script>/);
+    if (!m) throw new Error('embedded data script not found');
+    return { html: out, data: JSON.parse(m[1]!) as ScanResult };
+  }
+
+  it('injects the data without interpreting $ replacement patterns', async () => {
+    const { data } = await renderWithDetails(nasty);
+    const finding = data.findings.find((f) => f.id === 'GHSA-nasty');
+    // The advisory text must survive verbatim — no $-pattern expansion.
+    expect(finding?.details).toBe(nasty);
+  });
+
+  it('does not leak the data marker or close the script tag early', async () => {
+    const { html: out } = await renderWithDetails(nasty);
+    // The marker must be fully consumed, not re-emitted by a `$&` expansion.
+    expect(out).not.toContain(DATA_MARKER);
+    // Exactly two scripts survive: the injected data script and the app's.
+    expect((out.match(/<\/script>/g) ?? []).length).toBe(2);
+    // The doctype/head must appear exactly once (a `$\`` expansion duplicates it).
+    expect((out.match(/<!doctype html>/g) ?? []).length).toBe(1);
   });
 });
