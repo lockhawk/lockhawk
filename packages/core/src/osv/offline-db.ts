@@ -39,6 +39,24 @@ export class OfflineDbMissingError extends Error {
   }
 }
 
+// The cached ETag / Last-Modified are read back from a local file and echoed to
+// OSV as conditional-request headers. They originate from OSV's own responses
+// and the URL is fixed, so this is defense-in-depth: constrain each to its RFC
+// 9110 grammar so a tampered meta file can't inject arbitrary header content.
+const IMF_FIXDATE = /^[A-Za-z]{3}, \d{2} [A-Za-z]{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/;
+// entity-tag = [ "W/" ] DQUOTE *( %x21 / %x23-7E ) DQUOTE  (excludes DQUOTE/CTLs)
+const ENTITY_TAG = /^(?:W\/)?"[\x21\x23-\x7e]*"$/;
+
+/** A well-formed HTTP `Last-Modified` value (IMF-fixdate), else `undefined`. */
+export function sanitizeHttpDate(value: string | undefined): string | undefined {
+  return value && IMF_FIXDATE.test(value) ? value : undefined;
+}
+
+/** A well-formed entity-tag (strong or weak), else `undefined`. */
+export function sanitizeETag(value: string | undefined): string | undefined {
+  return value && ENTITY_TAG.test(value) ? value : undefined;
+}
+
 /** Read the offline DB metadata, or `undefined` if it has never been built. */
 export async function readOfflineMeta(cacheDir: string): Promise<OfflineMeta | undefined> {
   try {
@@ -66,8 +84,10 @@ export async function updateOfflineDatabase(opts: {
 
   const previous = force ? undefined : await readOfflineMeta(cacheDir);
   const headers: Record<string, string> = {};
-  if (previous?.etag) headers['If-None-Match'] = previous.etag;
-  if (previous?.lastModified) headers['If-Modified-Since'] = previous.lastModified;
+  const etag = sanitizeETag(previous?.etag);
+  const lastModified = sanitizeHttpDate(previous?.lastModified);
+  if (etag) headers['If-None-Match'] = etag;
+  if (lastModified) headers['If-Modified-Since'] = lastModified;
 
   onProgress?.('Fetching npm advisory database from OSV.dev…');
   const res = await fetch(OSV_NPM_ZIP_URL, { headers });
