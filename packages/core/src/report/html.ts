@@ -20,9 +20,13 @@ function embed(result: ScanResult): string {
  */
 export function toHtml(result: ScanResult, shell?: string): string {
   const dataScript = embed(result);
+  // A function replacer is required: a string replacement would interpret `$&`,
+  // `$\``, `$'`, `$1` and `$$` inside the embedded JSON as special patterns,
+  // corrupting (and breaking out of) the data script. Advisory text routinely
+  // contains these (regex-escape idioms, ReDoS payloads), so escape them away.
   if (shell) {
-    if (shell.includes(DATA_MARKER)) return shell.replace(DATA_MARKER, dataScript);
-    return shell.replace('</head>', `${dataScript}</head>`);
+    if (shell.includes(DATA_MARKER)) return shell.replace(DATA_MARKER, () => dataScript);
+    return shell.replace('</head>', () => `${dataScript}</head>`);
   }
   return fallbackTemplate(result, dataScript);
 }
