@@ -75,6 +75,29 @@ describe('OsvClient', () => {
     expect(vulnCalls).toBe(1); // second scan served the record from the on-disk cache
   });
 
+  it('queries OSV by package name only, leaving version matching to lockhawk', async () => {
+    let captured: { queries: { package: { name: string; ecosystem: string }; version?: string }[] };
+    server.use(
+      http.post(`${API}/querybatch`, async ({ request }) => {
+        captured = (await request.json()) as typeof captured;
+        return HttpResponse.json({
+          results: captured.queries.map(() => ({ vulns: [{ id: 'GHSA-1' }] })),
+        });
+      }),
+      vulnHandler,
+    );
+    // Two versions of the same package — coverage must not depend on OSV's
+    // server-side version filter, so the query carries the bare name (no version)
+    // and the package is queried once. lockhawk re-validates the match itself.
+    await new OsvClient({ cacheDir: cacheDir() }).fetchAdvisories([
+      { name: 'lodash', version: '4.17.11' },
+      { name: 'lodash', version: '3.0.0' },
+    ]);
+    expect(captured!.queries).toHaveLength(1);
+    expect(captured!.queries[0]).toEqual({ package: { name: 'lodash', ecosystem: 'npm' } });
+    expect(captured!.queries[0]!.version).toBeUndefined();
+  });
+
   it('follows pagination via next_page_token', async () => {
     server.use(
       http.post(`${API}/querybatch`, () =>

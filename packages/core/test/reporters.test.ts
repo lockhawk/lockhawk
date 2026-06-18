@@ -73,28 +73,55 @@ describe('SARIF reporter', () => {
   });
 });
 
-describe('HTML reporter (fallback template)', () => {
+describe('HTML reporter', () => {
   let html: string;
   beforeAll(() => {
     html = toHtml(result);
   });
 
-  it('embeds the scan data and renders the finding', () => {
-    expect(html).toContain('__SCAN_RESULT__');
+  it('renders the finding in a self-contained page', () => {
     expect(html).toContain('pkg-b');
     expect(html).toContain('GHSA-b');
   });
 
   it('renders http(s) references but never a javascript: href', () => {
     expect(html).toContain('href="https://example.com/advisory"');
-    // The URL may appear as inert JSON data, but never as a live link.
     expect(html).not.toContain('href="javascript:');
   });
 
-  it('loads no external resources (inline styles, no remote scripts/links)', () => {
-    expect(html).not.toMatch(/<script[^>]+src=/);
+  it('loads no external resources and ships no client-side script', () => {
+    // The dashboard is fully server-rendered: no <script> at all (no embedded
+    // JSON blob, no React bundle), no remote <link>, and styles are inlined.
+    expect(html).not.toContain('<script');
     expect(html).not.toMatch(/<link\b/);
     expect(html).toContain('<style>');
+  });
+
+  it('renders advisory details HTML-escaped, never as live markup', async () => {
+    // Real OSV advisories embed HTML, <script> tags and regex/ReDoS payloads in
+    // their details. None of it may become live markup in the rendered page.
+    const payload =
+      '<script>alert(1)</script> <img src=x onerror="alert(1)"> regex \'\\$&\' (.+)+$';
+    const evil: OsvVulnerability = { ...advisory, id: 'GHSA-nasty', details: payload };
+    const r = await scan({ path: projectDir }, stub([evil]));
+    const out = toHtml(r);
+    expect(out).not.toContain('<script>alert(1)</script>');
+    expect(out).not.toContain('onerror="alert(1)"');
+    expect(out).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+  });
+
+  it('shows the advisory details in a collapsible block', async () => {
+    const withDetails: OsvVulnerability = {
+      ...advisory,
+      id: 'GHSA-det',
+      summary: 'short summary',
+      details: 'First detail line.\nSecond detail line.',
+    };
+    const r = await scan({ path: projectDir }, stub([withDetails]));
+    const out = toHtml(r);
+    expect(out).toContain('<details');
+    expect(out).toContain('First detail line.');
+    expect(out).toContain('Second detail line.');
   });
 });
 

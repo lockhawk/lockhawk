@@ -27,10 +27,13 @@ interface BatchResult {
 }
 
 /**
- * Online OSV source. Uses the batch endpoint (which returns only matched ids)
- * then hydrates each unique id to a full record — caching records by id so
- * repeat scans do no network work. All matching is re-validated downstream by
- * `buildFindings`, so this client only has to gather candidate records.
+ * Online OSV source. Queries the batch endpoint by package *name only* — never
+ * pinning an installed version — so OSV returns every advisory naming each
+ * package; lockhawk's own range matcher (`buildFindings` → `vulnerabilityAffects`)
+ * then decides what actually affects the installed version. Delegating the
+ * version match to OSV's server would cap coverage at OSV's matcher; doing it
+ * locally makes coverage depend only on lockhawk (and mirrors the offline path).
+ * Hydrated records are cached by id so repeat scans do no network work.
  */
 export class OsvClient {
   private readonly limit;
@@ -39,10 +42,10 @@ export class OsvClient {
     this.limit = pLimit(opts.concurrency ?? 5);
   }
 
-  /** Fetch advisories affecting the given packages, keyed by package name. */
+  /** Fetch advisories naming the given packages, keyed by package name. */
   async fetchAdvisories(packages: PackageRef[]): Promise<Map<string, OsvVulnerability[]>> {
-    const unique = dedupePackages(packages);
-    const idsByName = await this.queryBatch(unique);
+    const names = [...new Set(packages.map((p) => p.name))];
+    const idsByName = await this.queryBatch(names);
 
     const allIds = new Set<string>();
     for (const ids of idsByName.values()) for (const id of ids) allIds.add(id);
@@ -61,37 +64,33 @@ export class OsvClient {
     return byName;
   }
 
-  private async queryBatch(packages: PackageRef[]): Promise<Map<string, Set<string>>> {
+  private async queryBatch(names: string[]): Promise<Map<string, Set<string>>> {
     const idsByName = new Map<string, Set<string>>();
 
-    for (let i = 0; i < packages.length; i += BATCH_SIZE) {
-      const chunk = packages.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < names.length; i += BATCH_SIZE) {
+      const chunk = names.slice(i, i + BATCH_SIZE);
       const body = {
-        queries: chunk.map((p) => ({
-          package: { name: p.name, ecosystem: 'npm' },
-          version: p.version,
-        })),
+        queries: chunk.map((name) => ({ package: { name, ecosystem: 'npm' } })),
       };
       const data = await this.request<{ results: BatchResult[] }>(`${OSV_API}/querybatch`, body);
 
       for (let j = 0; j < chunk.length; j++) {
-        const pkg = chunk[j]!;
+        const name = chunk[j]!;
         const result = data.results[j];
         if (!result) continue;
-        const set = idsByName.get(pkg.name) ?? new Set<string>();
+        const set = idsByName.get(name) ?? new Set<string>();
         for (const vuln of result.vulns ?? []) set.add(vuln.id);
-        // Pagination is rare for a single npm package; pull remaining pages if present.
+        // Querying by name (all versions) makes pagination more likely; pull every page.
         let pageToken = result.next_page_token;
         while (pageToken) {
           const page = await this.request<BatchResult>(`${OSV_API}/query`, {
-            package: { name: pkg.name, ecosystem: 'npm' },
-            version: pkg.version,
+            package: { name, ecosystem: 'npm' },
             page_token: pageToken,
           });
           for (const vuln of page.vulns ?? []) set.add(vuln.id);
           pageToken = page.next_page_token;
         }
-        if (set.size) idsByName.set(pkg.name, set);
+        if (set.size) idsByName.set(name, set);
       }
     }
     return idsByName;
@@ -164,17 +163,4 @@ export class OsvClient {
       // Cache write failures are non-fatal.
     }
   }
-}
-
-function dedupePackages(packages: PackageRef[]): PackageRef[] {
-  const seen = new Set<string>();
-  const out: PackageRef[] = [];
-  for (const p of packages) {
-    const key = `${p.name}@${p.version}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      out.push(p);
-    }
-  }
-  return out;
 }
