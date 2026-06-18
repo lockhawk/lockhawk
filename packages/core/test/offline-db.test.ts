@@ -4,7 +4,12 @@ import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { offlineDbDir, offlineMetaPath, shardBucket } from '../src/cache/paths.js';
-import { OfflineDbMissingError, loadAdvisoriesForPackages } from '../src/osv/offline-db.js';
+import {
+  OfflineDbMissingError,
+  loadAdvisoriesForPackages,
+  sanitizeETag,
+  sanitizeHttpDate,
+} from '../src/osv/offline-db.js';
 import type { OsvVulnerability } from '../src/types.js';
 
 /** Seed gzipped per-bucket shards + meta, exactly as `db update` would. */
@@ -59,5 +64,48 @@ describe('offline DB shards (gzip round-trip)', () => {
     await expect(loadAdvisoriesForPackages(empty, ['lodash'])).rejects.toBeInstanceOf(
       OfflineDbMissingError,
     );
+  });
+});
+
+describe('cache-validator sanitizers (file-derived header values)', () => {
+  describe('sanitizeHttpDate', () => {
+    it('accepts a well-formed IMF-fixdate', () => {
+      expect(sanitizeHttpDate('Sun, 06 Nov 1994 08:49:37 GMT')).toBe(
+        'Sun, 06 Nov 1994 08:49:37 GMT',
+      );
+    });
+
+    it('rejects undefined and empty values', () => {
+      expect(sanitizeHttpDate(undefined)).toBeUndefined();
+      expect(sanitizeHttpDate('')).toBeUndefined();
+    });
+
+    it('rejects malformed dates', () => {
+      expect(sanitizeHttpDate('not a date')).toBeUndefined();
+      expect(sanitizeHttpDate('2026-06-18T00:00:00Z')).toBeUndefined();
+    });
+
+    it('rejects a value carrying an injected header (CRLF)', () => {
+      expect(sanitizeHttpDate('Sun, 06 Nov 1994 08:49:37 GMT\r\nX-Evil: 1')).toBeUndefined();
+    });
+  });
+
+  describe('sanitizeETag', () => {
+    it('accepts a strong entity-tag', () => {
+      expect(sanitizeETag('"abc123"')).toBe('"abc123"');
+    });
+
+    it('accepts a weak entity-tag', () => {
+      expect(sanitizeETag('W/"abc123"')).toBe('W/"abc123"');
+    });
+
+    it('rejects undefined and unquoted values', () => {
+      expect(sanitizeETag(undefined)).toBeUndefined();
+      expect(sanitizeETag('abc123')).toBeUndefined();
+    });
+
+    it('rejects a value carrying an injected header (CRLF)', () => {
+      expect(sanitizeETag('"abc"\r\nX-Evil: 1')).toBeUndefined();
+    });
   });
 });
