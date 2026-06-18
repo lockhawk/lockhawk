@@ -113,7 +113,7 @@ function assemble(
     return undefined;
   };
 
-  const nodes: Record<string, RawNode> = {};
+  const nodes: Record<string, RawNode> = Object.create(null);
   for (const [key, entry] of entryByVersion) {
     // `key` is already a `name@version` PkgKey; recover both halves.
     const at = key.lastIndexOf('@');

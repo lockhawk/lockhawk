@@ -25,6 +25,11 @@
     "prettier": "^3.4.2",
     "semver": "^7.6.3",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^3.2.6"
+  },
+  "pnpm": {
+    "overrides": {
+      "tsup>esbuild": "^0.28.1"
+    }
   }
 }

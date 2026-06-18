@@ -64,9 +64,9 @@ function parsePackages(
     version: rootEntry.version ?? data.version,
   };
 
-  const nodes: Record<string, RawNode> = {};
+  const nodes: Record<string, RawNode> = Object.create(null);
   const unscannable: UnscannablePackage[] = [];
-  const pathToKey: Record<string, string> = {};
+  const pathToKey: Record<string, string> = Object.create(null);
 
   // First pass: create a node per installed package and map its path → key.
   for (const [p, entry] of Object.entries(packages)) {
@@ -163,7 +163,7 @@ function parseLegacy(
   const manifest = readRootManifest(dirname(lockfilePath));
   const root = { name: data.name ?? manifest.name, version: data.version ?? manifest.version };
 
-  const nodes: Record<string, RawNode> = {};
+  const nodes: Record<string, RawNode> = Object.create(null);
 
   const buildLevel = (deps?: Record<string, V1Entry>): Map<string, string> => {
     const m = new Map<string, string>();

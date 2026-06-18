@@ -25,6 +25,18 @@ export interface SarifLog {
 
 const INFO_URI = 'https://github.com/lockhawk/lockhawk';
 
+/** First http(s) reference, if any — never propagate javascript:/data: URIs. */
+function helpUriFor(references: string[]): string | undefined {
+  return references.find((ref) => {
+    try {
+      const u = new URL(ref);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  });
+}
+
 /** GitHub renders findings by `security-severity` (a CVSS-like number 0–10). */
 function securitySeverity(finding: Finding): number {
   if (typeof finding.severity.score === 'number') return finding.severity.score;
@@ -66,7 +78,7 @@ export function toSarif(result: ScanResult): SarifLog {
         name: `${finding.packageName} ${finding.id}`,
         shortDescription: { text: finding.summary },
         fullDescription: finding.details ? { text: finding.details } : undefined,
-        helpUri: finding.references[0],
+        helpUri: helpUriFor(finding.references),
         properties: {
           'security-severity': String(securitySeverity(finding)),
           tags: ['security', 'dependency', finding.severity.level],
