@@ -32,7 +32,7 @@ export function parsePnpm(lockfilePath: string): RawGraph {
   const manifest = readRootManifest(dirname(lockfilePath));
   const major = majorVersion(doc.lockfileVersion);
 
-  const nodes: Record<string, RawNode> = {};
+  const nodes: Record<string, RawNode> = Object.create(null);
 
   // Nodes come from the `packages` map (one entry per installed package).
   for (const key of Object.keys(doc.packages ?? {})) {

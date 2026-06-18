@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Finding, ScanResult, Severity } from '@lockhawk/core';
 import { decodeCvss } from './cvss.js';
+import { renderMarkdown } from './markdown.js';
 
 /** Build a style object that includes CSS custom properties (`--x`). */
 function vars(obj: Record<string, string | number>): CSSProperties {
@@ -341,7 +342,13 @@ function Detail({ finding, manager }: { finding: Finding | null; manager: string
         {finding.details || finding.summary ? (
           <div className="sec">
             <h3>Description</h3>
-            <p className="desc">{finding.details ?? finding.summary}</p>
+            <div
+              className="desc"
+              // renderMarkdown escapes all text and emits a fixed tag whitelist.
+              dangerouslySetInnerHTML={{
+                __html: renderMarkdown(finding.details ?? finding.summary),
+              }}
+            />
           </div>
         ) : null}
 

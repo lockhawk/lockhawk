@@ -56,6 +56,21 @@ describe('SARIF reporter', () => {
     expect(run.results[0]?.level).toBe('error'); // critical → error
     expect(run.results[0]?.partialFingerprints.lockhawkFinding).toBe('pkg-b@2.0.0@GHSA-b');
   });
+
+  it('never emits a non-http(s) reference as a rule helpUri', async () => {
+    const evil: OsvVulnerability = {
+      ...advisory,
+      id: 'GHSA-evil',
+      references: [{ url: 'javascript:alert(1)' }, { url: 'https://example.com/ok' }],
+    };
+    const r = await scan({ path: projectDir }, stub([evil]));
+    const run = toSarif(r).runs[0] as {
+      tool: { driver: { rules: { id: string; helpUri?: string }[] } };
+    };
+    const rule = run.tool.driver.rules.find((x) => x.id === 'GHSA-evil');
+    expect(rule?.helpUri).not.toContain('javascript:');
+    expect(rule?.helpUri).toBe('https://example.com/ok');
+  });
 });
 
 describe('HTML reporter (fallback template)', () => {

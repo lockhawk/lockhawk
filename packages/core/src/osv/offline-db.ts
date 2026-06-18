@@ -1,5 +1,5 @@
 import { createWriteStream } from 'node:fs';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
@@ -10,6 +10,11 @@ import type { OsvVulnerability } from '../types.js';
 import { offlineDbDir, offlineMetaPath, shardBucket } from '../cache/paths.js';
 
 const OSV_NPM_ZIP_URL = 'https://storage.googleapis.com/osv-vulnerabilities/npm/all.zip';
+
+// OSV advisory JSON files are small (well under 1 MiB). Cap per-entry size so a
+// malformed or hostile archive cannot exhaust memory. The download is from the
+// fixed OSV HTTPS bucket, so this is defense-in-depth, not the primary control.
+const MAX_ENTRY_BYTES = 8 * 1024 * 1024;
 
 export interface OfflineMeta {
   ecosystem: 'npm';
@@ -76,15 +81,21 @@ export async function updateOfflineDatabase(opts: {
     throw new Error(`OSV database download failed: HTTP ${res.status}`);
   }
 
-  const zipPath = join(tmpdir(), `lockhawk-osv-${process.pid}.zip`);
-  await pipeline(
-    Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]),
-    createWriteStream(zipPath),
-  );
-
-  onProgress?.('Extracting advisories…');
-  const records = await readZipRecords(zipPath);
-  await rm(zipPath, { force: true });
+  // Extract from a private temp dir (not a predictable shared path), and always
+  // clean it up — including on the error path.
+  const tmp = await mkdtemp(join(tmpdir(), 'lockhawk-osv-'));
+  const zipPath = join(tmp, 'all.zip');
+  let records: OsvVulnerability[];
+  try {
+    await pipeline(
+      Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]),
+      createWriteStream(zipPath),
+    );
+    onProgress?.('Extracting advisories…');
+    records = await readZipRecords(zipPath);
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
 
   onProgress?.('Building package index…');
   const byName = groupByPackage(records);
@@ -209,6 +220,8 @@ function readZipRecords(zipPath: string): Promise<OsvVulnerability[]> {
       if (err || !zip) return reject(err ?? new Error('Failed to open OSV zip'));
       zip.on('entry', (entry) => {
         if (!entry.fileName.endsWith('.json')) return zip.readEntry();
+        // Bound memory: skip implausibly large entries (advisory JSON is small).
+        if (entry.uncompressedSize > MAX_ENTRY_BYTES) return zip.readEntry();
         zip.openReadStream(entry, (streamErr, stream) => {
           if (streamErr || !stream) return zip.readEntry();
           const chunks: Buffer[] = [];

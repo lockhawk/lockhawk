@@ -39,7 +39,9 @@ export async function runServe(pathArg: string, opts: ServeOptions): Promise<voi
   });
 
   const port = opts.port ?? 7777;
-  server.listen(port, () => {
+  // Bind to loopback only — the dashboard embeds the full dependency tree and
+  // scan result, which should not be exposed to the local network.
+  server.listen(port, '127.0.0.1', () => {
     const url = `http://localhost:${port}`;
     process.stderr.write(
       `\nlockhawk dashboard running at ${url}\n${summaryLine(result)}\nPress Ctrl+C to stop.\n`,

@@ -8,6 +8,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -20,7 +21,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",
-    "vite": "^6.0.7",
+    "vite": "^6.4.3",
     "vite-plugin-singlefile": "^2.1.0"
   }
 }
