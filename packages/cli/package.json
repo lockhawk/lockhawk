@@ -1,6 +1,6 @@
 {
   "name": "lockhawk",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Fast, free, accurate npm dependency vulnerability scanner for local + CI/CD, powered by OSV.dev",
   "license": "MIT",
   "type": "module",
