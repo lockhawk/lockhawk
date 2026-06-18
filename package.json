@@ -21,7 +21,7 @@
     "test:release": "node --test 'scripts/*.test.mjs'"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/node": "^25.9.3",
     "prettier": "^3.4.2",
     "semver": "^7.6.3",
     "typescript": "^5.7.2",
