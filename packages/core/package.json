@@ -1,6 +1,6 @@
 {
   "name": "@lockhawk/core",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Scanning engine for lockhawk: lockfile parsing, OSV.dev vulnerability matching, CVSS v3/v4 scoring, and SARIF/JUnit/HTML reports",
   "license": "MIT",
   "type": "module",
