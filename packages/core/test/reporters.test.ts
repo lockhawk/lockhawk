@@ -4,7 +4,7 @@ import { scan } from '../src/engine.js';
 import { OsvDatabase } from '../src/osv/database.js';
 import { toJson } from '../src/report/json.js';
 import { toSarif } from '../src/report/sarif.js';
-import { toHtml } from '../src/report/html.js';
+import { toHtml, DATA_MARKER } from '../src/report/html.js';
 import type { ResolvedSource, VulnSource } from '../src/osv/source.js';
 import type { OsvVulnerability, ScanResult } from '../src/types.js';
 
@@ -73,54 +73,65 @@ describe('SARIF reporter', () => {
   });
 });
 
-describe('HTML reporter', () => {
+describe('HTML reporter (fallback template)', () => {
   let html: string;
   beforeAll(() => {
     html = toHtml(result);
   });
 
-  it('renders the finding in a self-contained page', () => {
+  it('embeds the scan data and renders the finding', () => {
+    expect(html).toContain('__SCAN_RESULT__');
     expect(html).toContain('pkg-b');
     expect(html).toContain('GHSA-b');
   });
 
   it('renders http(s) references but never a javascript: href', () => {
     expect(html).toContain('href="https://example.com/advisory"');
+    // The URL may appear as inert JSON data, but never as a live link.
     expect(html).not.toContain('href="javascript:');
   });
 
-  it('loads no external resources and ships no client-side script', () => {
-    // The dashboard is fully server-rendered: no <script> at all (no embedded
-    // JSON blob, no React bundle), no remote <link>, and styles are inlined.
-    expect(html).not.toContain('<script');
+  it('loads no external resources (inline styles, no remote scripts/links)', () => {
+    expect(html).not.toMatch(/<script[^>]+src=/);
     expect(html).not.toMatch(/<link\b/);
     expect(html).toContain('<style>');
   });
+});
 
-  it('renders advisory details HTML-escaped, never as live markup', async () => {
-    // Real OSV advisories embed HTML, <script> tags and regex/ReDoS payloads in
-    // their details. None of it may become live markup in the rendered page.
-    const payload =
-      '<script>alert(1)</script> <img src=x onerror="alert(1)"> regex \'\\$&\' (.+)+$';
-    const evil: OsvVulnerability = { ...advisory, id: 'GHSA-nasty', details: payload };
+describe('HTML reporter (shell injection)', () => {
+  // A shell mimicking the built report-UI: a marker in <head> and the inlined
+  // app bundle + closing </script> after it.
+  const shell = `<!doctype html>\n<html lang="en"><head>\n${DATA_MARKER}\n<script>boot();</script></head><body></body></html>`;
+
+  // Advisory text that exercises every special String.replace replacement
+  // pattern: $$, $&, $\` (prefix), $' (suffix) and $1 (capture group). Real OSV
+  // advisories embed exactly these — e.g. regex-escape code (`'\\$&'`) and
+  // ReDoS payloads written inline as `(.+)+$`.
+  const nasty = "regex escape uses '\\$&'; ReDoS payload `(.+)+$`; literal $$ and $' and $1 too";
+
+  async function renderWithDetails(details: string): Promise<{ html: string; data: ScanResult }> {
+    const evil: OsvVulnerability = { ...advisory, id: 'GHSA-nasty', details };
     const r = await scan({ path: projectDir }, stub([evil]));
-    const out = toHtml(r);
-    expect(out).not.toContain('<script>alert(1)</script>');
-    expect(out).not.toContain('onerror="alert(1)"');
-    expect(out).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    const out = toHtml(r, shell);
+    const m = out.match(/window\.__SCAN_RESULT__ = ([\s\S]*?);<\/script>/);
+    if (!m) throw new Error('embedded data script not found');
+    return { html: out, data: JSON.parse(m[1]!) as ScanResult };
+  }
+
+  it('injects the data without interpreting $ replacement patterns', async () => {
+    const { data } = await renderWithDetails(nasty);
+    const finding = data.findings.find((f) => f.id === 'GHSA-nasty');
+    // The advisory text must survive verbatim — no $-pattern expansion.
+    expect(finding?.details).toBe(nasty);
   });
 
-  it('shows the advisory details in a collapsible block', async () => {
-    const withDetails: OsvVulnerability = {
-      ...advisory,
-      id: 'GHSA-det',
-      summary: 'short summary',
-      details: 'First detail line.\nSecond detail line.',
-    };
-    const r = await scan({ path: projectDir }, stub([withDetails]));
-    const out = toHtml(r);
-    expect(out).toContain('<details');
-    expect(out).toContain('First detail line.');
-    expect(out).toContain('Second detail line.');
+  it('does not leak the data marker or close the script tag early', async () => {
+    const { html: out } = await renderWithDetails(nasty);
+    // The marker must be fully consumed, not re-emitted by a `$&` expansion.
+    expect(out).not.toContain(DATA_MARKER);
+    // Exactly two scripts survive: the injected data script and the app's.
+    expect((out.match(/<\/script>/g) ?? []).length).toBe(2);
+    // The doctype/head must appear exactly once (a `$\`` expansion duplicates it).
+    expect((out.match(/<!doctype html>/g) ?? []).length).toBe(1);
   });
 });

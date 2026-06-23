@@ -1,7 +1,7 @@
 {
   "name": "lockhawk",
   "version": "0.2.6",
-  "description": "Fast, free, accurate npm dependency vulnerability scanner for local + CI/CD, powered by OSV.dev",
+  "description": "Fast, free, accurate npm dependency vulnerability scanner for local + CI/CD with an interactive HTML dashboard and SARIF/JUnit output, powered by OSV.dev",
   "license": "MIT",
   "type": "module",
   "repository": {
@@ -18,14 +18,19 @@
     "lockhawk": "./dist/index.js"
   },
   "files": [
-    "dist/**/*.js"
+    "dist/**/*.js",
+    "dist/report-shell.html"
   ],
   "keywords": [
     "security",
     "vulnerability",
     "vulnerability-scanner",
+    "vulnerability-scanning",
+    "security-scanner",
+    "cve-scanner",
     "dependency-scanner",
     "dependency-scanning",
+    "dependency-vulnerabilities",
     "sca",
     "software-composition-analysis",
     "supply-chain-security",
@@ -44,6 +49,7 @@
     "ci",
     "ci-cd",
     "dashboard",
+    "html-report",
     "npm",
     "yarn",
     "pnpm",
@@ -51,7 +57,7 @@
     "dependencies"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/copy-shell.mjs",
     "dev": "tsup --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
@@ -66,6 +72,7 @@
     "ora": "^8.1.1"
   },
   "devDependencies": {
+    "@lockhawk/report-ui": "workspace:*",
     "@types/node": "^22.10.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
