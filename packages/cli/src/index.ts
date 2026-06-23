@@ -2,6 +2,9 @@ import { Command, Option } from 'commander';
 import type { ScanCliOptions } from './commands/scan.js';
 import type { Format } from './report/render.js';
 
+// Replaced at build time (tsup `define`) with the package.json version.
+declare const __LOCKHAWK_VERSION__: string;
+
 // Command handlers are imported lazily inside each `.action()` so that a bare
 // `lockhawk --help`/`--version`, and lighter commands, don't eagerly load the
 // scan engine, report renderers, or `open` (the browser launcher used only by
@@ -14,7 +17,7 @@ program
   .description(
     'Fast, free, accurate npm dependency vulnerability scanner (local + CI/CD), powered by OSV.dev',
   )
-  .version('0.1.0');
+  .version(__LOCKHAWK_VERSION__);
 
 const severityChoices = ['none', 'low', 'medium', 'high', 'critical'];
 
