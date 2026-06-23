@@ -17,7 +17,7 @@
     "lint": "prettier --check . && pnpm run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "pb": "node scripts/release.mjs",
+    "pub": "node scripts/release.mjs",
     "test:release": "node --test 'scripts/*.test.mjs'"
   },
   "devDependencies": {
