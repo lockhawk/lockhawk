@@ -72,8 +72,13 @@ npx lockhawk scan --format sarif --output scan.sarif --fail-on high
 npx lockhawk scan --format html --output report.html
 
 # Explore findings in an interactive dashboard in your browser
-npx lockhawk serve
+npx lockhawk@latest serve
 ```
+
+> **Tip:** pin `@latest` (e.g. `npx lockhawk@latest serve`) so npx fetches the newest
+> release instead of silently reusing an older copy from its cache. Each `serve` always
+> re-scans your current lockfile and re-renders the dashboard — just refresh the browser
+> tab after re-running.
 
 Install it as a dev dependency to use in scripts:
 
@@ -191,6 +196,29 @@ silently outlive their review:
 ```
 # reviewed 2026-06-01, revisit by year end
 GHSA-xxxx-xxxx-xxxx 2026-12-31
+```
+
+## 🧊 Caching & freshness
+
+lockhawk is fast because it caches aggressively — but a scan never reuses a stale _result_. Your
+lockfile is re-parsed and re-matched on every run, so the dependency coverage is always current. Only
+the vulnerability data is cached:
+
+- **Advisory data is cached on disk for 24h.** In the default `auto` mode lockhawk uses a fresh
+  offline database if one is present and under 24h old, otherwise it queries OSV.dev live and caches
+  those responses for 24h. A re-run inside that window reuses the cached advisories — it still scans
+  your full tree, so coverage is unchanged; only a brand-new advisory might not appear until the
+  cache expires.
+- **The `npx` package is cached by npx itself.** That is why the install prompt only appears once.
+  Pin `npx lockhawk@latest` so you run the newest release instead of a cached older copy of the tool.
+- **The `serve` dashboard is sent `no-store`,** so re-running `serve` always serves the current scan
+  — just refresh the browser tab after a re-run.
+
+To force completely fresh advisory data:
+
+```bash
+npx lockhawk scan --online --no-cache   # bypass the 24h cache and query OSV.dev live
+npx lockhawk db update --force          # refresh the offline database
 ```
 
 ## 🧩 Programmatic API

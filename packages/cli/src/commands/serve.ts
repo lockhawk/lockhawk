@@ -90,9 +90,17 @@ export function isLoopbackHost(host: string | undefined): boolean {
   return name === 'localhost' || name === '127.0.0.1' || name === '[::1]' || name === '::1';
 }
 
-function summaryLine(result: ScanResult): string {
+/**
+ * One-line summary printed under the dashboard URL. Includes the count of unique
+ * packages checked so the output is directly comparable to `npm audit`'s
+ * "audited N packages" — querying OSV per unique `name@version`, this is the
+ * coverage figure (deduped install instances, local workspace packages excluded).
+ */
+export function summaryLine(result: ScanResult): string {
+  const n = result.stats.uniquePackages;
+  const across = `across ${n} ${n === 1 ? 'package' : 'packages'}`;
   const s = result.summary;
   return s.total === 0
-    ? '✓ No known vulnerabilities found.'
-    : `${s.total} findings — ${s.critical} critical, ${s.high} high, ${s.medium} medium, ${s.low} low.`;
+    ? `✓ No known vulnerabilities found ${across}.`
+    : `${s.total} findings ${across} — ${s.critical} critical, ${s.high} high, ${s.medium} medium, ${s.low} low.`;
 }

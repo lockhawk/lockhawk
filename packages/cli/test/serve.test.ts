@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { createDashboardHandler } from '../src/commands/serve.js';
+import type { ScanResult } from '@lockhawk/core';
+import { createDashboardHandler, summaryLine } from '../src/commands/serve.js';
 
 /** Minimal ServerResponse stand-in that records headers and the written body. */
 function fakeRes(): ServerResponse & { headers: Record<string, string>; body: string } {
@@ -55,5 +56,46 @@ describe('dashboard request handler', () => {
     // Falls through to the HTML dashboard rather than leaking JSON.
     expect(res.headers['content-type']).toContain('text/html');
     expect(res.body).toContain('DASHBOARD');
+  });
+});
+
+describe('summaryLine', () => {
+  const make = (summary: Partial<ScanResult['summary']>, uniquePackages: number): ScanResult =>
+    ({
+      summary: {
+        total: 0,
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+        unknown: 0,
+        none: 0,
+        vulnerablePackages: 0,
+        fixable: 0,
+        ...summary,
+      },
+      stats: {
+        totalPackages: uniquePackages,
+        uniquePackages,
+        directDependencies: 0,
+        unscannable: 0,
+      },
+    }) as ScanResult;
+
+  it('reports the scanned package count alongside findings (comparable to npm audit)', () => {
+    const line = summaryLine(make({ total: 126, critical: 1, high: 53, medium: 63, low: 9 }, 1036));
+    expect(line).toBe('126 findings across 1036 packages — 1 critical, 53 high, 63 medium, 9 low.');
+  });
+
+  it('reports the package count even when there are no vulnerabilities', () => {
+    expect(summaryLine(make({ total: 0 }, 42))).toBe(
+      '✓ No known vulnerabilities found across 42 packages.',
+    );
+  });
+
+  it('singularizes a one-package scan', () => {
+    expect(summaryLine(make({ total: 0 }, 1))).toBe(
+      '✓ No known vulnerabilities found across 1 package.',
+    );
   });
 });
