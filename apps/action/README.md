@@ -31,15 +31,15 @@ jobs:
 
 ## Inputs
 
-| Input                | Default  | Description                                              |
-| -------------------- | -------- | -------------------------------------------------------- |
-| `path`               | `.`      | Project directory to scan                                |
-| `fail-on`            | `high`   | Minimum severity that fails the build                    |
-| `severity-threshold` | `low`    | Minimum severity to include in the report                |
-| `offline`            | `true`   | Warm + use the cached offline OSV DB (fast, recommended) |
-| `upload-sarif`       | `true`   | Upload SARIF to the Security tab                         |
-| `prod-only`          | `false`  | Ignore dev dependencies                                  |
-| `version`            | `latest` | lockhawk version to run                                  |
+| Input                | Default | Description                                              |
+| -------------------- | ------- | -------------------------------------------------------- |
+| `path`               | `.`     | Project directory to scan                                |
+| `fail-on`            | `high`  | Minimum severity that fails the build                    |
+| `severity-threshold` | `low`   | Minimum severity to include in the report                |
+| `offline`            | `true`  | Warm + use the cached offline OSV DB (fast, recommended) |
+| `upload-sarif`       | `true`  | Upload SARIF to the Security tab                         |
+| `prod-only`          | `false` | Ignore dev dependencies                                  |
+| `version`            | `0.2.5` | lockhawk version to run (pinned; set `latest` to opt in) |
 
 ## Outputs
 
