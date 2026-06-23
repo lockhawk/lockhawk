@@ -19,6 +19,8 @@ export interface OnlineClientOptions {
   noCache?: boolean;
   cacheTtlHours?: number;
   retries?: number;
+  /** Per-request network timeout in milliseconds (default 15s). */
+  timeoutMs?: number;
 }
 
 interface BatchResult {
@@ -39,7 +41,7 @@ export class OsvClient {
   private readonly limit;
 
   constructor(private readonly opts: OnlineClientOptions) {
-    this.limit = pLimit(opts.concurrency ?? 5);
+    this.limit = pLimit(opts.concurrency ?? 16);
   }
 
   /** Fetch advisories naming the given packages, keyed by package name. */
@@ -127,6 +129,9 @@ export class OsvClient {
           method: body ? 'POST' : 'GET',
           headers: body ? { 'content-type': 'application/json' } : undefined,
           body: body ? JSON.stringify(body) : undefined,
+          // Bound each request so a hung connection can't stall the scan
+          // indefinitely; a timeout surfaces as a (retryable) network error.
+          signal: AbortSignal.timeout(this.opts.timeoutMs ?? 15_000),
         });
         if (res.ok) return (await res.json()) as T;
         if (res.status === 429 || res.status >= 500) {

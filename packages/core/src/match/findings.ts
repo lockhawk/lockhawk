@@ -35,16 +35,24 @@ export function buildFindings(
     const candidates = candidatesFor(node.name);
     if (candidates.length === 0) continue;
 
-    const matched = candidates.filter(
-      (vuln) => vulnerabilityAffects(node.name, node.version, vuln).affected,
-    );
+    // Compute the range match once per candidate and reuse it below for
+    // fixed-version extraction. `dedupeVulnerabilities` returns the original
+    // object for unmerged advisories (cache hit); merged advisories are new
+    // objects whose union of ranges must be matched afresh (cache miss).
+    const matchCache = new Map<OsvVulnerability, ReturnType<typeof vulnerabilityAffects>>();
+    const matched = candidates.filter((vuln) => {
+      const match = vulnerabilityAffects(node.name, node.version, vuln);
+      matchCache.set(vuln, match);
+      return match.affected;
+    });
     if (matched.length === 0) continue;
 
     const path = shortestPath(graph, node.key);
     for (const vuln of dedupeVulnerabilities(matched)) {
       if (isIgnored(vuln, options.ignore)) continue;
 
-      const { fixedVersions } = vulnerabilityAffects(node.name, node.version, vuln);
+      const { fixedVersions } =
+        matchCache.get(vuln) ?? vulnerabilityAffects(node.name, node.version, vuln);
       const sortedFixes = sortVersions(fixedVersions);
       const nearest = nearestFix(node.version, fixedVersions);
 
