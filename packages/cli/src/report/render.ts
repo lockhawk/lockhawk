@@ -1,6 +1,7 @@
 import { toHtml, toJson, toJunit, toSarifString } from '@lockhawk/core';
 import type { ScanResult } from '@lockhawk/core';
 import { renderTable } from './table.js';
+import { loadReportShell } from './shell.js';
 
 export type Format = 'table' | 'json' | 'sarif' | 'html' | 'junit';
 
@@ -14,7 +15,7 @@ export async function renderResult(result: ScanResult, format: Format): Promise<
     case 'junit':
       return toJunit(result);
     case 'html':
-      return toHtml(result);
+      return toHtml(result, await loadReportShell());
     default:
       return renderTable(result);
   }

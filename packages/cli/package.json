@@ -18,7 +18,8 @@
     "lockhawk": "./dist/index.js"
   },
   "files": [
-    "dist/**/*.js"
+    "dist/**/*.js",
+    "dist/report-shell.html"
   ],
   "keywords": [
     "security",
@@ -51,7 +52,7 @@
     "dependencies"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/copy-shell.mjs",
     "dev": "tsup --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
@@ -66,6 +67,7 @@
     "ora": "^8.1.1"
   },
   "devDependencies": {
+    "@lockhawk/report-ui": "workspace:*",
     "@types/node": "^22.10.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
