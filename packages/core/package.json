@@ -41,7 +41,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
   ],
   "scripts": {
     "build": "tsup",
@@ -55,14 +56,12 @@
     "js-yaml": "^4.1.0",
     "p-limit": "^6.1.0",
     "p-retry": "^6.2.1",
-    "proper-lockfile": "^4.1.2",
     "semver": "^7.6.3",
     "yauzl": "^3.2.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/proper-lockfile": "^4.1.4",
     "@types/semver": "^7.5.8",
     "@types/yauzl": "^2.10.3",
     "msw": "^2.7.0",

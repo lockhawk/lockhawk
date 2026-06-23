@@ -1,9 +1,11 @@
 import { Command, Option } from 'commander';
-import { runScan } from './commands/scan.js';
 import type { ScanCliOptions } from './commands/scan.js';
 import type { Format } from './report/render.js';
-import { runReport } from './commands/report.js';
-import { runServe } from './commands/serve.js';
+
+// Command handlers are imported lazily inside each `.action()` so that a bare
+// `lockhawk --help`/`--version`, and lighter commands, don't eagerly load the
+// scan engine, report renderers, or `open` (the browser launcher used only by
+// `serve`). This keeps `npx lockhawk` cold-start fast for the common paths.
 
 const program = new Command();
 
@@ -46,7 +48,9 @@ program
   .option('--cache-ttl <hours>', 'cache freshness window in hours', (v) => Number(v))
   .option('--no-cache', 'bypass the on-disk cache')
   .option('--concurrency <n>', 'max concurrent OSV requests', (v) => Number(v))
-  .action((path: string, opts: ScanCliOptions & { format: Format }) => runScan(path, opts));
+  .action((path: string, opts: ScanCliOptions & { format: Format }) =>
+    import('./commands/scan.js').then((m) => m.runScan(path, opts)),
+  );
 
 const db = program.command('db').description('Manage the offline OSV database');
 db.command('update')
@@ -73,7 +77,7 @@ program
       .default('html'),
   )
   .option('-o, --output <file>', 'write the report to a file instead of stdout')
-  .action((opts) => runReport(opts));
+  .action((opts) => import('./commands/report.js').then((m) => m.runReport(opts)));
 
 program
   .command('serve')
@@ -84,7 +88,9 @@ program
   .option('--no-open', 'do not open the browser automatically')
   .option('--offline', 'use only the local offline database')
   .option('--online', 'force live OSV.dev queries')
-  .action((path: string, opts) => runServe(path, opts));
+  .action((path: string, opts) =>
+    import('./commands/serve.js').then((m) => m.runServe(path, opts)),
+  );
 
 program.parseAsync().catch((err) => {
   process.stderr.write(`lockhawk: ${err instanceof Error ? err.message : String(err)}\n`);
