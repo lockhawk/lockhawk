@@ -1,3 +1,4 @@
+import { statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { DependencyGraph } from '../types.js';
 import { detectLockfile } from './detect.js';
@@ -15,8 +16,32 @@ export class LockfileError extends Error {
   }
 }
 
+/**
+ * Upper bound on lockfile size, read once per call so it can be overridden in
+ * tests / by power users via `LOCKHAWK_MAX_LOCKFILE_BYTES`. Lockfiles are read
+ * fully into memory before parsing, so an unbounded file is a memory-exhaustion
+ * vector when scanning untrusted projects; 64 MB is far above any real lockfile.
+ */
+function maxLockfileBytes(): number {
+  const override = Number(process.env.LOCKHAWK_MAX_LOCKFILE_BYTES);
+  return Number.isFinite(override) && override > 0 ? override : 64 * 1024 * 1024;
+}
+
 /** Parse a detected lockfile into the manager-agnostic {@link RawGraph}. */
 export function parseLockfile(detected: DetectedLockfile): RawGraph {
+  let bytes = 0;
+  try {
+    bytes = statSync(detected.path).size;
+  } catch {
+    // If we can't stat it, let the parser surface a clear read error below.
+  }
+  const limit = maxLockfileBytes();
+  if (bytes > limit) {
+    throw new LockfileError(
+      `${detected.filename} is ${bytes} bytes, exceeding the ${limit}-byte safety limit. ` +
+        `Set LOCKHAWK_MAX_LOCKFILE_BYTES to raise it.`,
+    );
+  }
   try {
     switch (detected.manager) {
       case 'npm':

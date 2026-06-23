@@ -5,11 +5,17 @@ import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { gunzipSync, gzipSync } from 'node:zlib';
+import pLimit from 'p-limit';
 import yauzl from 'yauzl';
 import type { OsvVulnerability } from '../types.js';
 import { offlineDbDir, offlineMetaPath, shardBucket } from '../cache/paths.js';
 
 const OSV_NPM_ZIP_URL = 'https://storage.googleapis.com/osv-vulnerabilities/npm/all.zip';
+
+// A scan with a very wide dependency tree can touch many shard buckets at once.
+// Bound how many we read+decompress concurrently so we don't exhaust file
+// descriptors or spike memory on large monorepos.
+const SHARD_READ_CONCURRENCY = 32;
 
 // OSV advisory JSON files are small (well under 1 MiB). Cap per-entry size so a
 // malformed or hostile archive cannot exhaust memory. The download is from the
@@ -166,20 +172,23 @@ export async function loadAdvisoriesForPackages(
   }
 
   const result = new Map<string, OsvVulnerability[]>();
+  const limit = pLimit(SHARD_READ_CONCURRENCY);
   await Promise.all(
-    [...namesByBucket.entries()].map(async ([bucket, bucketNames]) => {
-      try {
-        const data = JSON.parse(
-          gunzipSync(await readFile(bucketPath(cacheDir, bucket))).toString('utf8'),
-        ) as Bucket;
-        for (const name of bucketNames) {
-          const records = data[name];
-          if (records?.length) result.set(name, records);
+    [...namesByBucket.entries()].map(([bucket, bucketNames]) =>
+      limit(async () => {
+        try {
+          const data = JSON.parse(
+            gunzipSync(await readFile(bucketPath(cacheDir, bucket))).toString('utf8'),
+          ) as Bucket;
+          for (const name of bucketNames) {
+            const records = data[name];
+            if (records?.length) result.set(name, records);
+          }
+        } catch {
+          // No bucket file → none of these packages have advisories.
         }
-      } catch {
-        // No bucket file → none of these packages have advisories.
-      }
-    }),
+      }),
+    ),
   );
   return result;
 }

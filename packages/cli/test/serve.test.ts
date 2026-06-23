@@ -17,7 +17,8 @@ function fakeRes(): ServerResponse & { headers: Record<string, string>; body: st
   return res as unknown as ServerResponse & { headers: Record<string, string>; body: string };
 }
 
-const req = (url: string) => ({ url }) as IncomingMessage;
+const req = (url: string, host = 'localhost:7777') =>
+  ({ url, headers: { host } }) as unknown as IncomingMessage;
 
 describe('dashboard request handler', () => {
   const handler = createDashboardHandler('<html>DASHBOARD</html>', '{"findings":[]}');
@@ -29,6 +30,7 @@ describe('dashboard request handler', () => {
     // dashboard from cache when `serve` is re-run at the same localhost URL.
     expect(res.headers['cache-control']).toMatch(/no-store/);
     expect(res.headers['content-type']).toContain('text/html');
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
     expect(res.body).toContain('DASHBOARD');
   });
 
@@ -38,5 +40,20 @@ describe('dashboard request handler', () => {
     expect(res.headers['cache-control']).toMatch(/no-store/);
     expect(res.headers['content-type']).toContain('application/json');
     expect(res.body).toContain('findings');
+  });
+
+  it('rejects non-loopback Host headers (DNS-rebinding defense)', () => {
+    const res = fakeRes();
+    handler(req('/api/result', 'evil.example.com'), res);
+    expect(res.statusCode).toBe(403);
+    expect(res.body).not.toContain('findings');
+  });
+
+  it('does not serve the result on a near-miss path (exact match only)', () => {
+    const res = fakeRes();
+    handler(req('/api/results-leak'), res);
+    // Falls through to the HTML dashboard rather than leaking JSON.
+    expect(res.headers['content-type']).toContain('text/html');
+    expect(res.body).toContain('DASHBOARD');
   });
 });

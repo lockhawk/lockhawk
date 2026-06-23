@@ -150,6 +150,11 @@ function parsePackages(
   };
 }
 
+// A package-lock v1 nests `dependencies` arbitrarily deep. A hostile or
+// malformed lockfile could nest thousands of levels and overflow the stack, so
+// the recursive walk bails past this depth (far beyond any real dependency tree).
+const MAX_NPM_TREE_DEPTH = 500;
+
 /** Lockfile v1: a nested `dependencies` tree. Direct deps come from package.json. */
 function parseLegacy(
   data: {
@@ -186,6 +191,11 @@ function parseLegacy(
     deps: Record<string, V1Entry> | undefined,
     ancestors: Map<string, string>[],
   ): void => {
+    if (ancestors.length > MAX_NPM_TREE_DEPTH) {
+      throw new Error(
+        `dependency nesting exceeds ${MAX_NPM_TREE_DEPTH} levels (malformed or malicious lockfile)`,
+      );
+    }
     const level = buildLevel(deps);
     const chain = [...ancestors, level];
     for (const [name, info] of Object.entries(deps ?? {})) {

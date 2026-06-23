@@ -25,8 +25,8 @@ inputs:
     description: 'Ignore dev dependencies'
     default: 'false'
   version:
-    description: 'lockhawk version to run via npx'
-    default: 'latest'
+    description: 'lockhawk version to run via npx. Pinned by default for reproducible, supply-chain-safe runs; set to "latest" to always pull the newest release.'
+    default: '0.2.5'
 
 outputs:
   sarif-file:

@@ -1,7 +1,7 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { OsvClient } from '../src/osv/client.js';
@@ -96,6 +96,20 @@ describe('OsvClient', () => {
     expect(captured!.queries).toHaveLength(1);
     expect(captured!.queries[0]).toEqual({ package: { name: 'lodash', ecosystem: 'npm' } });
     expect(captured!.queries[0]!.version).toBeUndefined();
+  });
+
+  it('aborts a hung request after the configured timeout', async () => {
+    server.use(
+      http.post(`${API}/querybatch`, async () => {
+        await delay(2000); // far longer than the timeout below
+        return HttpResponse.json({ results: [{}] });
+      }),
+    );
+    await expect(
+      new OsvClient({ cacheDir: cacheDir(), timeoutMs: 30, retries: 0 }).fetchAdvisories([
+        { name: 'lodash', version: '4.17.11' },
+      ]),
+    ).rejects.toThrow();
   });
 
   it('follows pagination via next_page_token', async () => {

@@ -57,7 +57,22 @@ export function createDashboardHandler(
 ): (req: IncomingMessage, res: ServerResponse) => void {
   return (req, res) => {
     res.setHeader('cache-control', 'no-store, max-age=0');
-    if (req.url && req.url.startsWith('/api/result')) {
+    res.setHeader('x-content-type-options', 'nosniff');
+
+    // The dashboard embeds the full dependency tree and scan result. The server
+    // is bound to loopback, but a DNS-rebinding attack can still point a hostile
+    // domain at 127.0.0.1 and have a victim's browser reach it. Only honour
+    // requests actually addressed to localhost so such cross-origin reads fail.
+    if (!isLoopbackHost(req.headers?.host)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+
+    // Exact path match (not `startsWith`) so only the intended endpoint serves
+    // the result payload.
+    const pathname = (req.url ?? '').split('?')[0] ?? '';
+    if (pathname === '/api/result') {
       res.setHeader('content-type', 'application/json');
       res.end(json);
       return;
@@ -65,6 +80,13 @@ export function createDashboardHandler(
     res.setHeader('content-type', 'text/html; charset=utf-8');
     res.end(html);
   };
+}
+
+/** True only for loopback `Host` headers (`localhost`/`127.0.0.1`/`[::1]`, any port). */
+export function isLoopbackHost(host: string | undefined): boolean {
+  if (!host) return false;
+  const name = host.replace(/:\d+$/, '').toLowerCase();
+  return name === 'localhost' || name === '127.0.0.1' || name === '[::1]' || name === '::1';
 }
 
 function summaryLine(result: ScanResult): string {

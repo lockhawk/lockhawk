@@ -18,7 +18,7 @@
     "lockhawk": "./dist/index.js"
   },
   "files": [
-    "dist"
+    "dist/**/*.js"
   ],
   "keywords": [
     "security",
