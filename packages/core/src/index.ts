@@ -47,5 +47,5 @@ export {
 export { toJson } from './report/json.js';
 export { toSarif, toSarifString } from './report/sarif.js';
 export type { SarifLog } from './report/sarif.js';
-export { toHtml } from './report/html.js';
+export { toHtml, DATA_MARKER } from './report/html.js';
 export { toJunit } from './report/junit.js';
