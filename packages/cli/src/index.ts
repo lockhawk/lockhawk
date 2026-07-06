@@ -91,6 +91,12 @@ program
   .option('--no-open', 'do not open the browser automatically')
   .option('--offline', 'use only the local offline database')
   .option('--online', 'force live OSV.dev queries')
+  .option('--cache-dir <dir>', 'override the cache directory')
+  .option('--cache-ttl <hours>', 'cache freshness window in hours', (v) => Number(v))
+  // serve scans fresh by default; --cache opts into reusing the on-disk cache.
+  // --no-cache is accepted too (it is the default) so the habitual flag still works.
+  .option('--cache', 'reuse the on-disk OSV cache (serve scans fresh by default)')
+  .option('--no-cache', 'scan fresh, bypassing the on-disk cache (the default)')
   .action((path: string, opts) =>
     import('./commands/serve.js').then((m) => m.runServe(path, opts)),
   );

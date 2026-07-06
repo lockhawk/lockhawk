@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { resolve } from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ScanResult } from '@lockhawk/core';
-import { createDashboardHandler, summaryLine } from '../src/commands/serve.js';
+import { createDashboardHandler, serveScanOptions, summaryLine } from '../src/commands/serve.js';
 
 /** Minimal ServerResponse stand-in that records headers and the written body. */
 function fakeRes(): ServerResponse & { headers: Record<string, string>; body: string } {
@@ -56,6 +57,39 @@ describe('dashboard request handler', () => {
     // Falls through to the HTML dashboard rather than leaking JSON.
     expect(res.headers['content-type']).toContain('text/html');
     expect(res.body).toContain('DASHBOARD');
+  });
+});
+
+describe('serveScanOptions', () => {
+  it('bypasses the on-disk cache by default (serve scans fresh)', () => {
+    expect(serveScanOptions('.', {}).noCache).toBe(true);
+  });
+
+  it('reuses the on-disk cache only when --cache is passed', () => {
+    // commander sets `cache: true` for --cache.
+    expect(serveScanOptions('.', { cache: true }).noCache).toBe(false);
+  });
+
+  it('treats the redundant --no-cache flag as a fresh scan too', () => {
+    // commander sets `cache: false` for --no-cache; serve is already fresh.
+    expect(serveScanOptions('.', { cache: false }).noCache).toBe(true);
+  });
+
+  it('threads --cache-dir and --cache-ttl through to the scan', () => {
+    const options = serveScanOptions('.', { cacheDir: '/tmp/lh', cacheTtl: 12 });
+    expect(options.cacheDir).toBe('/tmp/lh');
+    expect(options.cacheTtlHours).toBe(12);
+  });
+
+  it('maps --offline/--online to the source mode (default auto)', () => {
+    expect(serveScanOptions('.', {}).mode).toBe('auto');
+    expect(serveScanOptions('.', { offline: true }).mode).toBe('offline');
+    expect(serveScanOptions('.', { online: true }).mode).toBe('online');
+  });
+
+  it('resolves the scan path to an absolute directory', () => {
+    expect(serveScanOptions('some/dir', {}).path).toBe(resolve('some/dir'));
+    expect(serveScanOptions('', {}).path).toBe(resolve('.'));
   });
 });
 

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import open from 'open';
 import { scan, toHtml, toJson } from '@lockhawk/core';
-import type { ScanResult, SourceMode } from '@lockhawk/core';
+import type { ScanOptions, ScanResult, SourceMode } from '@lockhawk/core';
 import { loadReportShell } from '../report/shell.js';
 
 interface ServeOptions {
@@ -13,6 +13,31 @@ interface ServeOptions {
   open?: boolean; // commander sets false for --no-open
   offline?: boolean;
   online?: boolean;
+  cacheDir?: string;
+  cacheTtl?: number;
+  // `serve` scans fresh by default: `cache` is undefined normally, `true` only
+  // when `--cache` is passed, and `false` when the (redundant) `--no-cache` is.
+  cache?: boolean;
+}
+
+/**
+ * Build the scan options for `serve` from the parsed CLI flags. Kept as a pure
+ * function so the flag → scan-option mapping (source mode, cache bypass) is
+ * unit-testable without standing up a server.
+ *
+ * Unlike `scan` (which uses the cache by default for speed/CI), `serve` is an
+ * interactive dashboard where a stale result is confusing — so it bypasses the
+ * on-disk OSV cache by default and only reuses it when `--cache` is given.
+ */
+export function serveScanOptions(pathArg: string, opts: ServeOptions): ScanOptions {
+  const mode: SourceMode = opts.offline ? 'offline' : opts.online ? 'online' : 'auto';
+  return {
+    path: resolve(pathArg || '.'),
+    mode,
+    cacheDir: opts.cacheDir,
+    cacheTtlHours: opts.cacheTtl,
+    noCache: opts.cache !== true,
+  };
 }
 
 /** `serve` — run a scan (or load a saved result) and serve the dashboard locally. */
@@ -21,9 +46,8 @@ export async function runServe(pathArg: string, opts: ServeOptions): Promise<voi
   if (opts.input) {
     result = JSON.parse(readFileSync(opts.input, 'utf8')) as ScanResult;
   } else {
-    const mode: SourceMode = opts.offline ? 'offline' : opts.online ? 'online' : 'auto';
     process.stderr.write('Scanning…\n');
-    result = await scan({ path: resolve(pathArg || '.'), mode });
+    result = await scan(serveScanOptions(pathArg, opts));
   }
 
   const html = toHtml(result, await loadReportShell());
