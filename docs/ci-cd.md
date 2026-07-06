@@ -41,55 +41,139 @@ Or wire it up by hand for full control:
 
 ## Azure DevOps
 
-The most useful way to see results **inside** Azure DevOps is the native **Tests**
-tab: emit JUnit XML (each vulnerability is a failed test, with severity, CVSS, fix
-and dependency path in the failure detail; a clean scan is one passing test) and
-publish it with `PublishTestResults`. Also publish the self-contained HTML report
-as an artifact for the full interactive dashboard.
+Install lockhawk, run it on every build, fail the build on high-severity
+vulnerabilities, and publish **all** findings so the team can review them after
+the run — both in the native **Tests** tab and as the full interactive dashboard.
 
-```yaml
-- task: Cache@2
-  inputs:
-    key: 'lockhawk-osv | "$(Agent.OS)" | "$(Build.StartTime)"'
-    path: '$(HOME)/.cache/lockhawk'
-- script: npx lockhawk db update
-  displayName: 'Warm OSV database'
+### Install lockhawk
 
-# Build report (do not fail the step here — let the Tests tab show results first)
-- script: >
-    npx lockhawk scan
-    --offline --format junit
-    --output "$(Build.ArtifactStagingDir)/lockhawk.junit.xml"
-    --fail-on none
-  displayName: 'Scan dependencies (JUnit)'
+Add it as a dev dependency so the version is tracked in your repo (and updated
+like any other package):
 
-# Renders in the native Tests tab — failed tests = vulnerabilities
-- task: PublishTestResults@2
-  condition: always()
-  inputs:
-    testResultsFormat: 'JUnit'
-    testResultsFiles: '$(Build.ArtifactStagingDir)/lockhawk.junit.xml'
-    testRunTitle: 'Dependency vulnerabilities'
-    failTaskOnFailedTests: true # fail the pipeline when there are findings
-
-# Full interactive dashboard, downloadable from the build's Artifacts
-- script: >
-    npx lockhawk scan . --offline --format html
-    --output "$(Build.ArtifactStagingDir)/lockhawk-report.html"
-    --fail-on none
-  displayName: 'Generate HTML report'
-  condition: always()
-- task: PublishBuildArtifacts@1
-  condition: always()
-  inputs:
-    pathToPublish: '$(Build.ArtifactStagingDir)/lockhawk-report.html'
-    artifactName: 'security-report'
+```bash
+npm install --save-dev lockhawk
 ```
 
-This gives you findings rendered **natively in the Tests tab** (no extension
-needed), gating via `failTaskOnFailedTests`, and the full HTML dashboard as a
-downloadable artifact. Prefer the GitHub Security tab? Use `--format sarif` and
-the **SARIF SAST Scans Tab** marketplace extension instead.
+Optionally expose a script in `package.json`:
+
+```json
+{ "scripts": { "scan:deps": "lockhawk scan ." } }
+```
+
+The pipeline below installs it with `npm ci`. Prefer no install? Drop the
+`npm ci` step and replace every `npx lockhawk` with `npx -y lockhawk@0.2.8`
+(pin a version for reproducible, supply-chain-safe runs).
+
+### The pipeline
+
+The scan runs **once** to a JSON result and applies the gate (`--fail-on high`
+exits non-zero → the build turns red). JUnit and HTML are then re-rendered from
+that saved result — no re-scan — and every publish step is `condition: always()`
+so findings are still published when a high-severity finding fails the build.
+
+```yaml
+trigger: [main]
+pool: { vmImage: 'ubuntu-latest' }
+
+steps:
+  - task: NodeTool@0
+    inputs: { versionSpec: '20.x' }
+
+  - script: npm ci
+    displayName: 'Install dependencies (incl. lockhawk)'
+
+  # Warm the OSV database once, cached daily, so scans run fully offline in <1s.
+  - bash: echo "##vso[task.setvariable variable=LOCKHAWK_DB_DATE]$(date -u +%Y-%m-%d)"
+    displayName: 'Compute OSV cache date'
+  - task: Cache@2
+    inputs:
+      key: 'lockhawk-osv | "$(Agent.OS)" | "$(LOCKHAWK_DB_DATE)"'
+      restoreKeys: 'lockhawk-osv | "$(Agent.OS)"'
+      path: '$(HOME)/.cache/lockhawk'
+  - script: npx lockhawk db update
+    displayName: 'Warm OSV database'
+
+  # Scan once → JSON. Writes the result file, then exits 1 on any high+ finding,
+  # which fails the build. Every finding is captured regardless of severity.
+  - script: >
+      npx lockhawk scan .
+      --offline --format json
+      --output "$(Build.ArtifactStagingDir)/lockhawk-result.json"
+      --fail-on high
+    displayName: 'Scan dependencies (fails the build on high+)'
+
+  # Re-render JUnit + HTML from the saved result (no re-scan, no network).
+  # always() so they run even after the scan step failed the build.
+  - script: >
+      npx lockhawk report
+      -i "$(Build.ArtifactStagingDir)/lockhawk-result.json"
+      -f junit -o "$(Build.ArtifactStagingDir)/lockhawk.junit.xml"
+    displayName: 'Render JUnit'
+    condition: always()
+  - script: >
+      npx lockhawk report
+      -i "$(Build.ArtifactStagingDir)/lockhawk-result.json"
+      -f html -o "$(Build.ArtifactStagingDir)/lockhawk-report.html"
+    displayName: 'Render HTML dashboard'
+    condition: always()
+
+  # Every vulnerability in the native Tests tab (the scan step is the gate, so
+  # leave failTaskOnFailedTests off here to avoid failing on every finding).
+  - task: PublishTestResults@2
+    condition: always()
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(Build.ArtifactStagingDir)/lockhawk.junit.xml'
+      testRunTitle: 'Dependency vulnerabilities'
+      failTaskOnFailedTests: false
+
+  # The full interactive dashboard, rendered inline as a "LockHawk" tab on the
+  # run's results page. Requires the free Publish HTML Report extension (below).
+  - task: PublishHtmlReport@1
+    condition: always()
+    inputs:
+      reportDir: '$(Build.ArtifactStagingDir)/lockhawk-report.html'
+      tabName: 'LockHawk'
+
+  # …and the same HTML as a downloadable artifact (works without any extension).
+  - task: PublishBuildArtifacts@1
+    condition: always()
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDir)/lockhawk-report.html'
+      artifactName: 'security-report'
+```
+
+### Where the results show up (and stay viewable after the run)
+
+- **Tests tab** — every vulnerability is a failed test, with severity, CVSS
+  vector, fixed version and dependency path in the failure detail; a clean scan
+  is one passing test. Native — no extension required.
+- **A "LockHawk" tab** on the run's results page shows the full interactive
+  dashboard **inline**. This needs the free
+  [Publish HTML Report](https://marketplace.visualstudio.com/items?itemName=blakyaks.azure-pipelines-html-reports)
+  extension (a one-time install by an org admin). lockhawk's HTML report is a
+  single self-contained file — exactly the self-contained, single-page report
+  the extension expects — so it renders with no CORS or broken-link issues.
+- **Artifacts** — the same `lockhawk-report.html` is published as a downloadable
+  artifact, so the dashboard is available even if the extension isn't installed.
+
+Because they're attached to the build, all three persist for the pipeline's
+retention window — developers can open them long after the run finishes.
+
+### Tuning the gate
+
+The build fails when the `scan` step finds anything at or above `--fail-on`
+(default `high`, so a single high or critical finding turns the build red). The
+report still lists **every** finding — `--fail-on` controls only the exit code.
+
+- `--fail-on critical` — only critical findings break the build.
+- `--prod-only` — ignore dev dependencies.
+- `--severity-threshold medium` — drop low-severity noise from the report itself.
+- Report without ever failing the build: add `continueOnError: true` to the scan
+  step (the result file is still written, so the Tests tab and dashboard populate).
+
+Prefer the GitHub Security tab? Use `--format sarif` and the **SARIF SAST Scans
+Tab** marketplace extension instead.
 
 > The JUnit reporter works the same way in GitHub Actions (via a test-reporter
 > action) and GitLab CI (`artifacts:reports:junit:` surfaces it in the pipeline
@@ -107,10 +191,14 @@ dependency_scan:
     LOCKHAWK_CACHE: '.lockhawk-cache'
   script:
     - npx lockhawk db update
-    # JUnit for the pipeline/MR test widget…
-    - npx lockhawk scan --offline --format junit --output scan.junit.xml --fail-on none
-    # …and the full HTML dashboard as a browsable artifact.
-    - npx lockhawk scan --offline --format html --output scan-report.html --fail-on high
+    # Scan once → JSON. On a high+ finding it exits non-zero; note that and gate at
+    # the end so the JUnit + HTML reports below still render and publish.
+    - npx lockhawk scan . --offline --format json --output result.json --fail-on high || echo 1 > .lockhawk-failed
+    # Re-render from the saved result — no re-scan, no network.
+    - npx lockhawk report -i result.json -f junit -o scan.junit.xml # pipeline/MR test widget
+    - npx lockhawk report -i result.json -f html -o scan-report.html # browsable dashboard artifact
+    # Fail the job on high+ findings (the reports are already written and published).
+    - if [ -f .lockhawk-failed ]; then exit 1; fi
   artifacts:
     when: always
     paths: ['scan-report.html']

@@ -143,20 +143,27 @@ steps:
     with: { fail-on: high }
 ```
 
-**Azure DevOps** (findings render natively in the Tests tab via JUnit):
+**Azure DevOps** (high+ fails the build; every finding lands in the native Tests tab):
 
 ```yaml
 - script: npx lockhawk db update
   displayName: Warm OSV database
-- script: npx lockhawk scan --offline --format junit --output lockhawk.junit.xml --fail-on none
-  displayName: Scan dependencies
+# Scans once, writing the result and failing the build on any high+ finding.
+- script: npx lockhawk scan . --offline --format json --output $(Build.ArtifactStagingDir)/lockhawk-result.json --fail-on high
+  displayName: Scan dependencies (fails on high+)
+# Re-render JUnit from the saved result (always, so it publishes even on a red build).
+- script: npx lockhawk report -i $(Build.ArtifactStagingDir)/lockhawk-result.json -f junit -o $(Build.ArtifactStagingDir)/lockhawk.junit.xml
+  condition: always()
 - task: PublishTestResults@2
   condition: always()
   inputs:
     testResultsFormat: JUnit
-    testResultsFiles: lockhawk.junit.xml
-    failTaskOnFailedTests: true # fail the pipeline when there are findings
+    testResultsFiles: $(Build.ArtifactStagingDir)/lockhawk.junit.xml
+    failTaskOnFailedTests: false # the scan step is the gate
 ```
+
+The full recipe — including the interactive dashboard rendered **inline** as a build
+tab that stays viewable after the run — is in **[docs/ci-cd.md](docs/ci-cd.md)**.
 
 **GitLab CI** (JUnit surfaces in the pipeline and merge-request test widgets):
 
