@@ -160,6 +160,28 @@ steps:
 Because they're attached to the build, all three persist for the pipeline's
 retention window — developers can open them long after the run finishes.
 
+### View vulnerability trends on a team dashboard
+
+The JUnit results also feed Azure DevOps' **native test dashboards** — no
+extension or hosting required. Because each vulnerability is a test (and a clean
+scan is a passing test), the built-in **Test Results Trend** widget charts your
+vulnerability count and pass rate **over time**, aggregated across every run and
+viewable on a team dashboard long after any single build.
+
+To add it (a one-time UI step, after the pipeline has run at least once):
+
+1. Open **Overview → Dashboards** and pick or create a team dashboard.
+2. **Edit → Add a widget → Test Results Trend** (or **Test Results Trend
+   (Advanced)** for filtering by outcome/branch/stage across pipelines).
+3. Configure it to point at this pipeline and save.
+
+The trend tile shows counts, pass rate and failure trends — "how many
+vulnerabilities over time." For the per-finding detail (which CVE, CVSS, fix,
+dependency path), drill into the **Tests** tab or the **LockHawk** dashboard tab
+above. See the
+[widget catalog](https://learn.microsoft.com/en-us/azure/devops/report/dashboards/widget-catalog)
+and [Configure the Test Results Trend (Advanced) widget](https://learn.microsoft.com/en-us/azure/devops/report/dashboards/configure-test-results-trend).
+
 ### Tuning the gate
 
 The build fails when the `scan` step finds anything at or above `--fail-on`
