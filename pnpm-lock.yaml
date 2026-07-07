@@ -27,8 +27,6 @@ importers:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@22.19.21)(msw@2.14.6(@types/node@22.19.21)(typescript@5.9.3))
 
-  apps/action: {}
-
   packages/cli:
     dependencies:
       '@lockhawk/core':

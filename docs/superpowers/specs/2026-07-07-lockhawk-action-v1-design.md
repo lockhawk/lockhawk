@@ -1,5 +1,7 @@
 # Design: make `lockhawk/lockhawk@v1` resolve as documented
 
+> Reference: [npm — lockhawk](https://www.npmjs.com/package/lockhawk?activeTab=readme)
+
 **Date:** 2026-07-07
 **Status:** Approved (design)
 

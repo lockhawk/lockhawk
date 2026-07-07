@@ -1,7 +1,0 @@
-{
-  "name": "lockhawk-action",
-  "version": "0.1.0",
-  "private": true,
-  "description": "GitHub Action wrapper for lockhawk (composite action)",
-  "license": "MIT"
-}

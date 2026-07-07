@@ -14,7 +14,7 @@ This is a [pnpm](https://pnpm.io) monorepo:
 | `packages/core`      | `@lockhawk/core` — the scanning engine (lockfiles → graph → OSV match → reports) |
 | `packages/cli`       | `lockhawk` — the command-line interface                                          |
 | `packages/report-ui` | `@lockhawk/report-ui` — the React dashboard (single-file build)                  |
-| `apps/action`        | the GitHub Action (composite)                                                    |
+| `action.yml`         | the GitHub Action (composite; root-level so `lockhawk/lockhawk@v1` resolves)     |
 | `docs/`              | CI/CD recipes and other docs                                                     |
 
 ## Getting set up

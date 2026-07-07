@@ -7,7 +7,7 @@ its [exit codes](#exit-codes) give you precise control over gating.
 
 ## GitHub Actions
 
-The simplest path is the bundled action (see [`apps/action`](../apps/action)):
+The simplest path is the bundled action (see [`action.yml`](../action.yml)):
 
 ```yaml
 permissions:
