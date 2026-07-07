@@ -249,11 +249,11 @@ console.log(result.summary, result.findings);
 
 ## 📦 Packages
 
-| Package                           | Description                             |
-| --------------------------------- | --------------------------------------- |
-| [`lockhawk`](packages/cli)        | The CLI (the `lockhawk` binary).        |
-| [`@lockhawk/core`](packages/core) | The scanning engine (programmatic API). |
-| [`apps/action`](apps/action)      | The GitHub Action wrapper.              |
+| Package                           | Description                                        |
+| --------------------------------- | -------------------------------------------------- |
+| [`lockhawk`](packages/cli)        | The CLI (the `lockhawk` binary).                   |
+| [`@lockhawk/core`](packages/core) | The scanning engine (programmatic API).            |
+| [`action.yml`](action.yml)        | The GitHub Action ([docs](docs/github-action.md)). |
 
 ## 🤝 Contributing
 

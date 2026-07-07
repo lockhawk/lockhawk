@@ -16,9 +16,11 @@ import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import semver from 'semver';
 import { planRelease } from './release-plan.mjs';
+import { setActionVersion } from './action-yaml.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DRY_RUN = process.argv.includes('--dry-run');
+const ACTION_FILE = join(ROOT, 'action.yml');
 
 // Published, version-locked packages, in publish order (core first; the CLI depends on it).
 const PACKAGES = [
@@ -45,8 +47,14 @@ function writeVersion(dir, version) {
 // Write the bumped version to every package and return a restore() that puts the
 // files back byte-for-byte — lets --dry-run pack the real next version safely.
 function applyVersion(version) {
-  const saved = PACKAGES.map((p) => [pkgFile(p.dir), readFileSync(pkgFile(p.dir), 'utf8')]);
+  const files = [...PACKAGES.map((p) => pkgFile(p.dir)), ACTION_FILE];
+  const saved = files.map((f) => [f, readFileSync(f, 'utf8')]);
+  const actionYaml = saved[saved.length - 1][1];
+  const updatedActionYaml = setActionVersion(actionYaml, version);
   for (const p of PACKAGES) writeVersion(p.dir, version);
+  // Keep the composite action pinned to the CLI version it ships with, so
+  // `lockhawk/lockhawk@v1` always runs the just-released CLI.
+  writeFileSync(ACTION_FILE, updatedActionYaml);
   return () => {
     for (const [file, raw] of saved) writeFileSync(file, raw);
   };
@@ -194,20 +202,27 @@ async function main() {
     }
 
     console.log('\n▶ Committing + tagging…');
-    run('git', ['add', ...PACKAGES.map((p) => join(p.dir, 'package.json'))]);
+    run('git', ['add', ...PACKAGES.map((p) => join(p.dir, 'package.json')), ACTION_FILE]);
     run('git', ['commit', '-m', `release: v${version}`]);
-    run('git', ['tag', `v${version}`]);
+    run('git', ['tag', '-a', `v${version}`, '-m', `v${version}`]);
 
+    // Stable releases advance the floating `v1` tag users reference as
+    // `lockhawk/lockhawk@v1`; prereleases must never displace it.
+    const stable = npmTag === 'latest';
+    if (stable) run('git', ['tag', '-f', 'v1']);
+
+    const pushHint = `git push --follow-tags${stable ? ' && git push -f origin v1' : ''}`;
     if (await askYesNo(rl, '\nPush commit + tag to origin?')) {
       try {
         run('git', ['push', '--follow-tags']);
+        if (stable) run('git', ['push', '-f', 'origin', 'v1']);
       } catch {
         console.warn(
-          '! Push failed (no remote yet?). Run `git push --follow-tags` once your remote is set.',
+          `! Push failed (no remote yet?). Run \`${pushHint}\` once your remote is set.`,
         );
       }
     } else {
-      console.log('Skipped push — run `git push --follow-tags` when ready.');
+      console.log(`Skipped push — run \`${pushHint}\` when ready.`);
     }
 
     console.log(`\n✓ Released v${version} (npm tag: ${npmTag}).`);
