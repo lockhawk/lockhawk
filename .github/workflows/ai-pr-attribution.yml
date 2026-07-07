@@ -1,0 +1,66 @@
+# Required status check: AI-authored PRs must credit the human contributors on
+# every commit, and never credit Claude/Anthropic. Human PRs pass trivially, so
+# this can safely be a required check on protected branches (see
+# docs/ai-pr-cap-setup.md).
+name: AI PR attribution
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  attribution:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check commit attribution
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          APP_LOGIN: 'lockhawk-ai[bot]'
+          EXPECTED_AUTHOR_EMAIL: 'ifeanyionyebueke.ben@gmail.com'
+          COAUTHOR: 'Co-Authored-By: Faith Chinonye <faithchinonye53@gmail.com>'
+        with:
+          script: |
+            const APP_LOGIN = process.env.APP_LOGIN;
+            const EXPECTED = process.env.EXPECTED_AUTHOR_EMAIL.toLowerCase();
+            const COAUTHOR = process.env.COAUTHOR.toLowerCase();
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+
+            // Only AI PRs are subject to the attribution rule; humans pass.
+            if (pr.user.login !== APP_LOGIN) {
+              core.info(`#${pr.number} is not an AI PR (${pr.user.login}); skipping.`);
+              return;
+            }
+
+            const commits = await github.paginate(github.rest.pulls.listCommits, {
+              owner, repo, pull_number: pr.number, per_page: 100,
+            });
+
+            const problems = [];
+            for (const c of commits) {
+              const sha = c.sha.slice(0, 7);
+              const email = (c.commit.author && c.commit.author.email || '').toLowerCase();
+              const msg = (c.commit.message || '');
+              const msgLower = msg.toLowerCase();
+              if (email !== EXPECTED) {
+                problems.push(`${sha}: author is <${email || 'unknown'}>, expected <${EXPECTED}>`);
+              }
+              if (!msgLower.includes(COAUTHOR)) {
+                problems.push(`${sha}: missing "${process.env.COAUTHOR}" trailer`);
+              }
+              if (/claude|anthropic/i.test(msg)) {
+                problems.push(`${sha}: message credits Claude/Anthropic (not allowed)`);
+              }
+            }
+
+            if (problems.length) {
+              core.setFailed(
+                `AI PR attribution check failed (${problems.length} issue(s)):\n` +
+                problems.map((p) => `  - ${p}`).join('\n'));
+            } else {
+              core.info(`Attribution OK across ${commits.length} commit(s).`);
+            }

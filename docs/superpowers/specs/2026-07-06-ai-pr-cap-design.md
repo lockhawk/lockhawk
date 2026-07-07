@@ -1,7 +1,9 @@
 # Design: Cap AI-authored PRs at 5 pending (GitHub)
 
 **Date:** 2026-07-06
-**Status:** Approved design — pending spec review before implementation planning.
+**Status:** Implemented on branch `feature/ai-pr-cap` (`.github/workflows/ai-pr-cap.yml`,
+`.github/workflows/ai-pr-attribution.yml`, `docs/ai-pr-cap-setup.md`). Requires the
+one-time GitHub App setup in the setup doc before it is live.
 
 ## Context
 
@@ -24,12 +26,12 @@ rule.
 ## Non-goals
 
 - No cap or gating on human PRs.
-- No cap on AI *draft* PRs (only ready-for-review PRs count).
+- No cap on AI _draft_ PRs (only ready-for-review PRs count).
 - Not a merge-queue or CI-gating system; this is purely a review-queue bound.
 
 ## Definitions
 
-- **AI identity:** a GitHub App `lockhawk-ai`. Every AI PR is *opened by* this
+- **AI identity:** a GitHub App `lockhawk-ai`. Every AI PR is _opened by_ this
   App and appears with GitHub PR author `lockhawk-ai[bot]`.
 - **AI PR:** an open PR whose **GitHub PR author is the `lockhawk-ai` App.** This
   is the only signal the cap uses — it is set at authentication time and cannot
@@ -43,7 +45,7 @@ rule.
 1. **PR author (enforcement layer):** the `lockhawk-ai` App opens the PR. The cap
    counts PRs by this author. Humans open PRs under their own accounts and are
    never counted or modified.
-2. **Commit authorship (attribution layer):** the commits *inside* each AI PR are
+2. **Commit authorship (attribution layer):** the commits _inside_ each AI PR are
    attributed to the humans, never Claude:
    - `Author: Beniah Onyebueke <ifeanyionyebueke.ben@gmail.com>`
    - `Co-Authored-By: Faith Chinonye <faithchinonye53@gmail.com>` on every commit
@@ -56,9 +58,13 @@ rule.
 ## Enforcement design
 
 A single **event-driven GitHub Actions workflow** (mechanism A) reacts to the
-App's PR lifecycle. It uses the built-in `GITHUB_TOKEN` with
-`permissions: { pull-requests: write, contents: read }`. Actions taken by
-`GITHUB_TOKEN` do not retrigger workflows, so promotion is loop-safe.
+App's PR lifecycle. It authenticates as the `lockhawk-ai` App (installation token
+minted in-workflow via `actions/create-github-app-token`) rather than the built-in
+`GITHUB_TOKEN`, because the App reliably has draft-toggle permission and reuses the
+credentials already required to open PRs. Trade-off: an App-token action _can_
+retrigger workflows, so promoting a queued draft fires a `ready_for_review` event —
+but the counting logic makes that a no-op (the promoted PR is the 5th; ≤ 5 holds),
+so there is no loop.
 
 **Triggers:** `pull_request` with types `[opened, reopened, ready_for_review, closed]`.
 
@@ -67,7 +73,7 @@ it exits immediately (humans untouched).
 
 ### On open / reopened / ready_for_review
 
-1. Count the App's *other* pending PRs (open, not draft).
+1. Count the App's _other_ pending PRs (open, not draft).
 2. If that count is already ≥ 5, this PR would be the 6th → **park it**:
    - convert to draft (GraphQL `convertPullRequestToDraft`),
    - add label `ai-queued`,
@@ -97,8 +103,8 @@ commit:
 - carries any Claude / Anthropic attribution.
 
 > **Interpretation to confirm at review:** this follows the standing rule
-> (*author* = Beniah, *co-author* = Faith on every commit). Your phrasing "either
-> Beniah or Chinonye" could instead mean the author may be *either* human. If you
+> (_author_ = Beniah, _co-author_ = Faith on every commit). Your phrasing "either
+> Beniah or Chinonye" could instead mean the author may be _either_ human. If you
 > want that, the check would accept author ∈ {Beniah, Faith} with the other as
 > co-author. Flag it and I'll adjust.
 
@@ -117,19 +123,19 @@ it. It runs only on App-authored PRs; human PRs are exempt.
   closed).
 - **A queued draft is closed** → no promotion needed (it was not pending).
 
-## To verify during implementation planning
+## Assumptions — resolved during implementation
 
-These are assumptions to confirm, not established facts:
+1. **Draft toggle by `GITHUB_TOKEN`:** inconclusive/historically inconsistent, so
+   the workflow authenticates as the App instead (guaranteed PR-write). Resolved.
+2. **App author filter:** the implementation identifies AI PRs by
+   `pull_request.user.login === 'lockhawk-ai[bot]'` on the event payload and lists
+   the App's open PRs via the REST pulls API filtered by that login — no reliance
+   on `gh --app`/`author:app/...` search quirks. Resolved.
+3. **App PRs trigger workflows:** confirmed — only `GITHUB_TOKEN`-authored PRs are
+   suppressed; a GitHub App's PRs trigger `pull_request` workflows normally.
 
-1. `GITHUB_TOKEN` with `pull-requests: write` can toggle draft state via the
-   GraphQL `convertPullRequestToDraft` / `markPullRequestReadyForReview`
-   mutations. (Historically draft conversion sometimes required a PAT.) If not,
-   the workflow runs with a PAT or the App's own installation token instead.
-2. The exact author-filter syntax for the App in `gh` / GraphQL search
-   (`author:app/lockhawk-ai` vs `lockhawk-ai[bot]`).
-3. That PRs opened by the `lockhawk-ai` App reliably trigger `pull_request`
-   workflows (App-authored events are not suppressed the way `GITHUB_TOKEN`-
-   authored events are).
+Still verify against a live repo (see Testing), since GitHub's event system can't
+be exercised locally.
 
 ## Testing strategy
 
