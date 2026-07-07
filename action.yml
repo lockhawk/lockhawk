@@ -24,6 +24,9 @@ inputs:
   prod-only:
     description: 'Ignore dev dependencies'
     default: 'false'
+  job-summary:
+    description: 'Write a findings summary to the GitHub Actions run page (job summary)'
+    default: 'true'
   version:
     description: 'lockhawk version to run via npx. Pinned by default for reproducible, supply-chain-safe runs; set to "latest" to always pull the newest release.'
     default: '0.2.11'
@@ -62,17 +65,40 @@ runs:
       shell: bash
       run: |
         set +e
-        SARIF="$RUNNER_TEMP/lockhawk.sarif"
+        RESULT="$RUNNER_TEMP/lockhawk-result.json"
         npx -y lockhawk@${{ inputs.version }} scan "${{ inputs.path }}" \
-          --format sarif --output "$SARIF" \
+          --format json --output "$RESULT" \
           --severity-threshold "${{ inputs.severity-threshold }}" \
           --fail-on "${{ inputs.fail-on }}" \
           ${{ inputs.offline == 'true' && '--offline' || '--online' }} \
           ${{ inputs.prod-only == 'true' && '--prod-only' || '' }}
         code=$?
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"
-        echo "sarif-file=$SARIF" >> "$GITHUB_OUTPUT"
+        echo "result-file=$RESULT" >> "$GITHUB_OUTPUT"
+        echo "sarif-file=$RUNNER_TEMP/lockhawk.sarif" >> "$GITHUB_OUTPUT"
         exit 0
+
+    # Re-render the saved result (no re-scan) into the artifacts CI consumes.
+    - name: Render SARIF
+      if: ${{ inputs.upload-sarif == 'true' }}
+      shell: bash
+      run: |
+        RESULT="${{ steps.scan.outputs.result-file }}"
+        if [ -f "$RESULT" ]; then
+          npx -y lockhawk@${{ inputs.version }} report \
+            -i "$RESULT" -f sarif -o "${{ steps.scan.outputs.sarif-file }}"
+        fi
+
+    # Render an inline Markdown summary to the run page (works on private repos,
+    # no GitHub Advanced Security required). always() so it shows on red builds.
+    - name: Write job summary
+      if: ${{ always() && inputs.job-summary == 'true' }}
+      shell: bash
+      run: |
+        RESULT="${{ steps.scan.outputs.result-file }}"
+        if [ -f "$RESULT" ]; then
+          npx -y lockhawk@${{ inputs.version }} report -i "$RESULT" -f markdown >> "$GITHUB_STEP_SUMMARY"
+        fi
 
     - name: Upload SARIF to the Security tab
       if: ${{ inputs.upload-sarif == 'true' && hashFiles(steps.scan.outputs.sarif-file) != '' }}

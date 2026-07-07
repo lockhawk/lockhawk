@@ -116,6 +116,17 @@ steps:
       -f html -o "$(Build.ArtifactStagingDir)/lockhawk-report.html"
     displayName: 'Render HTML dashboard'
     condition: always()
+  - script: >
+      npx lockhawk report
+      -i "$(Build.ArtifactStagingDir)/lockhawk-result.json"
+      -f markdown -o "$(Build.ArtifactStagingDir)/lockhawk-summary.md"
+    displayName: 'Render Markdown summary'
+    condition: always()
+
+  # Publish the Markdown summary as a native build-summary tab (no extension).
+  - bash: echo "##vso[task.uploadsummary]$(Build.ArtifactStagingDir)/lockhawk-summary.md"
+    displayName: 'Publish summary to the build page'
+    condition: always()
 
   # Every vulnerability in the native Tests tab (the scan step is the gate, so
   # leave failTaskOnFailedTests off here to avoid failing on every finding).
@@ -145,6 +156,9 @@ steps:
 
 ### Where the results show up (and stay viewable after the run)
 
+- **The build-summary tab** — the Markdown summary (`##vso[task.uploadsummary]`)
+  renders inline on the build's summary page **natively, with no extension** —
+  the fastest at-a-glance view, refreshed each run.
 - **Tests tab** — every vulnerability is a failed test, with severity, CVSS
   vector, fixed version and dependency path in the failure detail; a clean scan
   is one passing test. Native — no extension required.

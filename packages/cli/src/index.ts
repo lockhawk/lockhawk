@@ -27,7 +27,7 @@ program
   .argument('[path]', 'project directory to scan', '.')
   .addOption(
     new Option('-f, --format <format>', 'output format')
-      .choices(['table', 'json', 'sarif', 'html', 'junit'])
+      .choices(['table', 'json', 'sarif', 'html', 'junit', 'markdown'])
       .default('table'),
   )
   .option('-o, --output <file>', 'write the report to a file instead of stdout')
@@ -76,7 +76,7 @@ program
   .requiredOption('-i, --input <file>', 'path to a JSON scan result')
   .addOption(
     new Option('-f, --format <format>', 'output format')
-      .choices(['table', 'json', 'sarif', 'html', 'junit'])
+      .choices(['table', 'json', 'sarif', 'html', 'junit', 'markdown'])
       .default('html'),
   )
   .option('-o, --output <file>', 'write the report to a file instead of stdout')

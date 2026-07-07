@@ -31,15 +31,16 @@ jobs:
 
 ## Inputs
 
-| Input                | Default | Description                                              |
-| -------------------- | ------- | -------------------------------------------------------- |
-| `path`               | `.`     | Project directory to scan                                |
-| `fail-on`            | `high`  | Minimum severity that fails the build                    |
-| `severity-threshold` | `low`   | Minimum severity to include in the report                |
-| `offline`            | `true`  | Warm + use the cached offline OSV DB (fast, recommended) |
-| `upload-sarif`       | `true`  | Upload SARIF to the Security tab                         |
-| `prod-only`          | `false` | Ignore dev dependencies                                  |
-| `version`            | `0.2.5` | lockhawk version to run (pinned; set `latest` to opt in) |
+| Input                | Default  | Description                                              |
+| -------------------- | -------- | -------------------------------------------------------- |
+| `path`               | `.`      | Project directory to scan                                |
+| `fail-on`            | `high`   | Minimum severity that fails the build                    |
+| `severity-threshold` | `low`    | Minimum severity to include in the report                |
+| `offline`            | `true`   | Warm + use the cached offline OSV DB (fast, recommended) |
+| `upload-sarif`       | `true`   | Upload SARIF to the Security tab                         |
+| `prod-only`          | `false`  | Ignore dev dependencies                                  |
+| `job-summary`        | `true`   | Write a findings summary to the run page (job summary)   |
+| `version`            | `0.2.11` | lockhawk version to run (pinned; set `latest` to opt in) |
 
 ## Outputs
 
@@ -51,4 +52,7 @@ jobs:
 ## Notes
 
 - `security-events: write` permission is required for SARIF upload.
+- A Markdown findings summary is written to the run's job summary by default
+  (`job-summary: true`); it renders inline on the run page even on a failing
+  build, and needs no GitHub Advanced Security — handy for private repos.
 - Set `offline: false` to query OSV.dev live instead of using the cached DB.
