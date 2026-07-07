@@ -25,6 +25,7 @@ const SUMMARY_MAX = 100;
 function mdCell(text: string): string {
   return text
     .replace(/\r?\n/g, ' ')
+    .replace(/\\/g, '\\\\')
     .replace(/\|/g, '\\|')
     .replace(/`/g, '\\`')
     .replace(/</g, '&lt;')
