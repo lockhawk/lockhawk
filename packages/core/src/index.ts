@@ -49,3 +49,4 @@ export { toSarif, toSarifString } from './report/sarif.js';
 export type { SarifLog } from './report/sarif.js';
 export { toHtml, DATA_MARKER } from './report/html.js';
 export { toJunit } from './report/junit.js';
+export { toMarkdown } from './report/markdown.js';

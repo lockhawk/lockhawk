@@ -64,7 +64,7 @@ npm install --save-dev lockhawk    # for use in package scripts and CI
 
 ```
 lockhawk scan [path]            Scan a project (this is the default command)
-  -f, --format <fmt>               table | json | sarif | html | junit   (default: table)
+  -f, --format <fmt>               table | json | sarif | html | junit | markdown  (default: table)
   -o, --output <file>              write the report to a file
   --severity-threshold <level>     minimum severity to include in the report
   --fail-on <level>                minimum severity that causes a non-zero exit (default: high)

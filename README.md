@@ -90,7 +90,7 @@ npm install --save-dev lockhawk
 
 ```
 lockhawk scan [path]            Scan a project (this is the default command)
-  -f, --format <fmt>               table | json | sarif | html | junit   (default: table)
+  -f, --format <fmt>               table | json | sarif | html | junit | markdown  (default: table)
   -o, --output <file>              write the report to a file
   --severity-threshold <level>     minimum severity to include in the report
   --fail-on <level>                minimum severity that causes a non-zero exit (default: high)
@@ -245,7 +245,8 @@ console.log(result.summary, result.findings);
    sharded copy of the database, or online via the batch API with a per-advisory cache.
 3. **Match** each installed version against advisory ranges using the canonical OSV event sweep,
    score severity from CVSS v3 and v4 vectors, and de-duplicate aliased advisories.
-4. **Report** as a colorized table, JSON, SARIF 2.1.0, JUnit XML, or a standalone HTML dashboard.
+4. **Report** as a colorized table, JSON, SARIF 2.1.0, JUnit XML, a Markdown CI summary, or a
+   standalone HTML dashboard.
 
 ## 📦 Packages
 
@@ -266,7 +267,7 @@ By participating you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
 ## 🗺️ Roadmap
 
 - [ ] Per-package pass/fail mode for JUnit (`--junit-all-packages`)
-- [ ] Markdown summary output for inline CI summaries
+- [x] Markdown summary output for inline CI summaries (`--format markdown`)
 - [ ] Richer dependency-path view (multiple paths per finding)
 - [ ] Optional reachability hints to cut dev-only and unreachable noise
 - [ ] More ecosystems (the engine is npm-focused today)

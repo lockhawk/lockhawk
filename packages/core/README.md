@@ -2,7 +2,7 @@
 
 The scanning engine behind [**lockhawk**](https://github.com/lockhawk/lockhawk): lockfile parsing,
 dependency graph building, [OSV.dev](https://osv.dev) matching, CVSS v3 and v4 scoring, and report
-generation (table, JSON, SARIF, JUnit, HTML).
+generation (table, JSON, SARIF, JUnit, HTML, Markdown).
 
 > **Most people want the CLI, not this package.** To scan a project, use
 > [`lockhawk`](https://www.npmjs.com/package/lockhawk) and run `npx lockhawk scan`. Install
