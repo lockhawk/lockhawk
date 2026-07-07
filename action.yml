@@ -29,7 +29,7 @@ inputs:
     default: 'true'
   version:
     description: 'lockhawk version to run via npx. Pinned by default for reproducible, supply-chain-safe runs; set to "latest" to always pull the newest release.'
-    default: '0.2.11'
+    default: '0.2.12-alpha.0'
 
 outputs:
   sarif-file:
