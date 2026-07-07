@@ -1,0 +1,122 @@
+# Caps AI-authored PRs at 5 "pending" (open + ready-for-review). See
+# docs/ai-pr-cap-setup.md for the one-time setup (GitHub App, secrets, label).
+#
+# Behaviour (only ever acts on PRs authored by the AI App; humans are untouched):
+#   - open / reopened / ready_for_review: if the App already has 5 ready PRs,
+#     this one is parked as a draft, labelled, and commented on.
+#   - closed (merged or closed): the oldest queued draft(s) are promoted back to
+#     ready-for-review until 5 are ready again (top-up-to-5, idempotent).
+name: AI PR cap
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, closed]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+# Serialize so concurrent PR events can't race the count.
+concurrency:
+  group: ai-pr-cap
+  cancel-in-progress: false
+
+jobs:
+  enforce:
+    # Only the AI App's PRs are subject to the cap.
+    if: github.event.pull_request.user.login == 'lockhawk-ai[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      # Authenticate as the lockhawk-ai App: reliably has pull-requests:write
+      # (draft toggling), and these are the same credentials the App uses to open
+      # PRs. (GITHUB_TOKEN may also suffice but its draft-toggle support is
+      # historically inconsistent, so we use the App token.)
+      - name: Mint App token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.LOCKHAWK_AI_APP_ID }}
+          private-key: ${{ secrets.LOCKHAWK_AI_APP_PRIVATE_KEY }}
+
+      - name: Enforce cap
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          APP_LOGIN: 'lockhawk-ai[bot]'
+          LIMIT: '5'
+          QUEUED_LABEL: 'ai-queued'
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const APP_LOGIN = process.env.APP_LOGIN;
+            const LIMIT = Number(process.env.LIMIT);
+            const QUEUED_LABEL = process.env.QUEUED_LABEL;
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            const action = context.payload.action;
+
+            // All open PRs authored by the App.
+            const appPRs = (await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'open', per_page: 100,
+            })).filter((p) => p.user.login === APP_LOGIN);
+
+            const pending = appPRs.filter((p) => !p.draft); // open + ready = "pending"
+            const queued = appPRs
+              .filter((p) => p.draft && p.labels.some((l) => l.name === QUEUED_LABEL))
+              .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // oldest first
+
+            const toDraft = (id) => github.graphql(
+              `mutation($id:ID!){convertPullRequestToDraft(input:{pullRequestId:$id}){clientMutationId}}`,
+              { id });
+            const toReady = (id) => github.graphql(
+              `mutation($id:ID!){markPullRequestReadyForReview(input:{pullRequestId:$id}){clientMutationId}}`,
+              { id });
+
+            async function ensureLabel() {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: QUEUED_LABEL });
+              } catch (e) {
+                if (e.status !== 404) throw e;
+                await github.rest.issues.createLabel({
+                  owner, repo, name: QUEUED_LABEL, color: 'fbca04',
+                  description: 'AI PR queued behind the 5-PR review-queue cap',
+                });
+              }
+            }
+
+            if (action === 'closed') {
+              // A slot may have freed. Promote oldest queued drafts up to LIMIT.
+              let current = pending.length;
+              for (const q of queued) {
+                if (current >= LIMIT) break;
+                await toReady(q.node_id);
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number: q.number, name: QUEUED_LABEL,
+                }).catch(() => {});
+                core.info(`Promoted #${q.number} to ready-for-review.`);
+                current++;
+              }
+              return;
+            }
+
+            // opened / reopened / ready_for_review
+            if (pr.draft) {
+              core.info(`#${pr.number} is a draft; not counted.`);
+              return;
+            }
+            const others = pending.filter((p) => p.number !== pr.number).length;
+            if (others >= LIMIT) {
+              await ensureLabel();
+              await toDraft(pr.node_id);
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: pr.number, labels: [QUEUED_LABEL],
+              });
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: pr.number,
+                body: `🅿️ AI review queue is full (${LIMIT}/${LIMIT}). This PR has `
+                  + `been queued as a **draft** and will be promoted automatically `
+                  + `when a slot frees (an earlier AI PR is merged or closed).`,
+              });
+              core.info(`Parked #${pr.number} as a queued draft (others pending: ${others}).`);
+            } else {
+              core.info(`#${pr.number} is within the cap (others pending: ${others}).`);
+            }
