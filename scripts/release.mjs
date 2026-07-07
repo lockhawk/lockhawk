@@ -49,10 +49,12 @@ function writeVersion(dir, version) {
 function applyVersion(version) {
   const files = [...PACKAGES.map((p) => pkgFile(p.dir)), ACTION_FILE];
   const saved = files.map((f) => [f, readFileSync(f, 'utf8')]);
+  const actionYaml = saved[saved.length - 1][1];
+  const updatedActionYaml = setActionVersion(actionYaml, version);
   for (const p of PACKAGES) writeVersion(p.dir, version);
   // Keep the composite action pinned to the CLI version it ships with, so
   // `lockhawk/lockhawk@v1` always runs the just-released CLI.
-  writeFileSync(ACTION_FILE, setActionVersion(readFileSync(ACTION_FILE, 'utf8'), version));
+  writeFileSync(ACTION_FILE, updatedActionYaml);
   return () => {
     for (const [file, raw] of saved) writeFileSync(file, raw);
   };
