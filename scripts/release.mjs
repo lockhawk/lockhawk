@@ -202,7 +202,7 @@ async function main() {
     console.log('\n▶ Committing + tagging…');
     run('git', ['add', ...PACKAGES.map((p) => join(p.dir, 'package.json')), ACTION_FILE]);
     run('git', ['commit', '-m', `release: v${version}`]);
-    run('git', ['tag', `v${version}`]);
+    run('git', ['tag', '-a', `v${version}`, '-m', `v${version}`]);
 
     // Stable releases advance the floating `v1` tag users reference as
     // `lockhawk/lockhawk@v1`; prereleases must never displace it.
